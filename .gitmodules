@@ -4,3 +4,21 @@
 [submodule "vendor/nds-bootstrap"]
 	path = vendor/nds-bootstrap
 	url = https://github.com/Xzonn/nds-bootstrap.git
+[submodule "vendor/miniz"]
+	path = vendor/miniz
+	url = https://github.com/Xzonn/miniz.git
+[submodule "vendor/cJSON"]
+	path = vendor/cJSON
+	url = https://github.com/DaveGamble/cJSON.git
+[submodule "vendor/xdelta"]
+	path = vendor/xdelta
+	url = https://github.com/Xzonn/xdelta.git
+[submodule "vendor/ndstool"]
+	path = vendor/ndstool
+	url = https://github.com/Xzonn/ndstool.git
+[submodule "vendor/mbedtls"]
+	path = vendor/mbedtls
+	url = https://github.com/Mbed-TLS/mbedtls.git
+[submodule "vendor/uni-algo"]
+	path = vendor/uni-algo
+	url = https://github.com/uni-algo/uni-algo.git

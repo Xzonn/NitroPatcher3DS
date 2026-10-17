@@ -1,0 +1,59 @@
+ROOT := $(abspath ../..)
+MODE ?= host
+BUILD := $(ROOT)/build/patch-$(MODE)
+
+COMMON := $(ROOT)/vendor/ndstool/source
+MBEDTLS := $(ROOT)/vendor/mbedtls
+MINIZ := $(ROOT)/vendor/miniz
+XDELTA := $(ROOT)/vendor/xdelta/xdelta3
+CJSON := $(ROOT)/vendor/cJSON
+
+ifeq ($(MODE),arm9)
+CC := $(DEVKITARM)/bin/arm-none-eabi-gcc
+CXX := $(DEVKITARM)/bin/arm-none-eabi-g++
+AR := $(DEVKITARM)/bin/arm-none-eabi-ar
+ARCH := -mthumb -mthumb-interwork -march=armv5te -mtune=arm946e-s -DARM9
+ICONV_INCLUDE := -I/opt/np3d/libiconv/include
+NDS_INCLUDE := -I$(DEVKITPRO)/libnds/include
+else
+CC := gcc
+CXX := g++
+AR := ar
+endif
+
+CPPFLAGS := $(ICONV_INCLUDE) $(NDS_INCLUDE) -I$(CURDIR) -I$(COMMON) -I$(MINIZ) -I$(XDELTA) -I$(CJSON) -I$(MBEDTLS)/include -I$(ROOT)/vendor/uni-algo/include
+CPPFLAGS += -DUNI_ALGO_STATIC_DATA
+CPPFLAGS += -D_GNU_SOURCE -DNP3D_LIBRARY -DMBEDTLS_CONFIG_FILE='"mbedtls_config.h"'
+CPPFLAGS += -DMINIZ_NO_DEFLATE_APIS -DMINIZ_NO_ZLIB_COMPATIBLE_NAMES
+CPPFLAGS += -DXD3_ENCODER=0 -DXD3_USE_LARGEFILE64=0 -DXD3_USE_LARGESIZET=0 -DHAVE_ALIGNED_ACCESS_REQUIRED=1
+CPPFLAGS += -DSIZEOF_SIZE_T=__SIZEOF_SIZE_T__ -DSIZEOF_UNSIGNED_INT=__SIZEOF_INT__ -DSIZEOF_UNSIGNED_LONG=__SIZEOF_LONG__ -DSIZEOF_UNSIGNED_LONG_LONG=__SIZEOF_LONG_LONG__
+CFLAGS := -O2 -g -Wall -ffunction-sections -fdata-sections $(ARCH)
+CXXFLAGS := $(CFLAGS) -std=gnu++17 -fno-exceptions
+VPATH := $(CURDIR):$(COMMON):$(MINIZ):$(XDELTA):$(CJSON):$(MBEDTLS)/library
+CFILES := miniz.c miniz_zip.c miniz_tinfl.c cJSON.c xdelta3.c md5.c sha1.c sha256.c md.c aes.c platform_util.c
+CPPFILES := core.cpp delta.cpp package.cpp cache.cpp rom.cpp twl.cpp nds_adapter.cpp ndsextract.cpp encryption.cpp crc.cpp environment.cpp
+OBJECTS := $(addprefix $(BUILD)/,$(CFILES:.c=.o) $(CPPFILES:.cpp=.o))
+
+.PHONY: all
+all: $(BUILD)/libnp3d.a
+ifeq ($(MODE),host)
+all: $(ROOT)/out/np3d-prepare
+endif
+
+$(BUILD):
+	mkdir -p $@
+
+$(BUILD)/%.o: %.c $(CURDIR)/Makefile $(CURDIR)/mbedtls_config.h | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -MMD -MP -c $< -o $@
+
+$(BUILD)/%.o: %.cpp $(CURDIR)/Makefile | $(BUILD)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MP -c $< -o $@
+
+$(BUILD)/libnp3d.a: $(OBJECTS)
+	$(AR) rcs $@ $(OBJECTS)
+
+$(ROOT)/out/np3d-prepare: $(ROOT)/source/host/main.cpp $(BUILD)/libnp3d.a
+	mkdir -p $(ROOT)/out
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $< $(BUILD)/libnp3d.a -Wl,--gc-sections -o $@
+
+-include $(OBJECTS:.o=.d)

@@ -1,10 +1,16 @@
-.PHONY: all launcher bootstrap verify
+.PHONY: all launcher bootstrap verify patch-arm9 host
 
 export DIAGNOSTIC ?= 0
 
 all: launcher bootstrap
 
-launcher:
+patch-arm9:
+	$(MAKE) -C source/patch MODE=arm9
+
+host:
+	$(MAKE) -C source/patch MODE=host
+
+launcher: patch-arm9
 	mkdir -p build
 	printf '%s\n' "$(DIAGNOSTIC)" > build/launcher-mode.next
 	if ! cmp -s build/launcher-mode.next build/launcher-mode; then $(MAKE) -C vendor/TWiLightMenu/slot1launch clean; fi

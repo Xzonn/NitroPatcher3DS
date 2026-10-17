@@ -1,0 +1,4 @@
+#pragma once
+#include "../patch/core.h"
+
+np3d::SourcePtr openGameCard();

@@ -8,6 +8,9 @@
 #endif
 
 #include "launch_engine.h"
+#include "card_source.h"
+#include "progress.h"
+#include "environment.h"
 
 bool scfgUnlock = false;
 int TWLMODE = 0;
@@ -28,7 +31,8 @@ static void stopWithMessage(const char *message);
 
 static void prepareDiagnostic()
 {
-    FILE *output = std::fopen("sd:/NP3DTRACE.BIN", "wb");
+    np3d::makeDirectory("sd:/nitro-patcher/logs");
+    FILE *output = std::fopen("sd:/nitro-patcher/logs/NP3DTRACE.BIN", "wb");
     if (!output)
     {
         stopWithMessage("Unable to create NP3DTRACE.BIN.");
@@ -46,7 +50,7 @@ static void prepareDiagnostic()
         stopWithMessage("Unable to close NP3DTRACE.BIN.");
     }
     struct stat info;
-    if (stat("sd:/NP3DTRACE.BIN", &info) != 0 || info.st_size != 0x408000 || info.st_ino < 2)
+    if (stat("sd:/nitro-patcher/logs/NP3DTRACE.BIN", &info) != 0 || info.st_size != 0x408000 || info.st_ino < 2)
     {
         stopWithMessage("Unable to locate NP3DTRACE.BIN.");
     }
@@ -64,8 +68,17 @@ static void stopWithMessage(const char *message)
     }
 }
 
+static void runEnvironmentDump()
+{
+    consoleClear();
+    iprintf("Collecting environment report...\n");
+    dumpEnvironment();
+    stopWithMessage("Saved nitro-patcher/logs/\nenvironment.log\nRestart the app to return.");
+}
+
 int main()
 {
+    np3d::setFatalHandler(stopWithMessage);
     fifoSendValue32(FIFO_PM, PM_REQ_SLEEP_DISABLE);
     consoleDemoInit();
     iprintf("NitroPatcher3DS by Xzonn\n\n");
@@ -79,6 +92,8 @@ int main()
     {
         stopWithMessage("Unable to access the SD card.");
     }
+    auto patches = np3d::listPatches("sd:/nitro-patcher");
+    unsigned int selectedPatch = 0;
 
     fifoSendValue32(FIFO_USER_02, 1);
     fifoSendValue32(FIFO_USER_07, 1);
@@ -91,6 +106,11 @@ int main()
     }
 
     sysSetCardOwner(BUS_OWNER_ARM9);
+    scanKeys();
+    if (keysHeld() & KEY_Y)
+    {
+        runEnvironmentDump();
+    }
     alignas(4) unsigned char header[0x200];
     cardReadHeader(header);
     if (header[0] == 0xff && header[1] == 0xff && header[2] == 0xff && header[3] == 0xff)
@@ -120,23 +140,63 @@ int main()
     iprintf("%s\n%s\n\n", title, gameCode);
 #if NP3D_DIAGNOSTIC
     iprintf("Diagnostic build\n");
-    iprintf("Log: sd:/NP3DTRACE.BIN\n");
+    iprintf("Log: nitro-patcher/logs/\nNP3DTRACE.BIN\n");
     iprintf("After black screen, wait 15s.\n");
     iprintf("Hold L+R+Up+X for 2s, wait 5s,\nthen power off and copy the log.\n\n");
 #endif
     iprintf("A: Start Game Card\n");
+    iprintf("Y: Environment report\n");
+    if (patches.empty())
+    {
+        iprintf("Place .xzp files in\nnitro-patcher/patches/\n");
+    }
+    else
+    {
+        iprintf("Up/Down: Select patch\nX: Prepare patch cache\n");
+    }
+    bool redrawPatch = !patches.empty();
 
     while (true)
     {
         swiWaitForVBlank();
         scanKeys();
-        if (keysDown() & KEY_A)
+        unsigned int pressed = keysDown();
+        if (pressed & KEY_Y)
+        {
+            runEnvironmentDump();
+        }
+        if (!patches.empty() && (pressed & (KEY_UP | KEY_DOWN)))
+        {
+            selectedPatch = (selectedPatch + patches.size() + (pressed & KEY_DOWN ? 1 : -1)) % patches.size();
+            redrawPatch = true;
+        }
+        if (redrawPatch)
+        {
+            iprintf("\x1b[20;0H\x1b[J%u/%u %s\n", selectedPatch + 1, unsigned(patches.size()),
+                patches[selectedPatch].substr(patches[selectedPatch].find_last_of('/') + 1).c_str());
+            redrawPatch = false;
+        }
+        if ((pressed & KEY_A) || (!patches.empty() && (pressed & KEY_X)))
         {
             alignas(4) unsigned char currentHeader[0x200];
             cardReadHeader(currentHeader);
             if (std::memcmp(header, currentHeader, sizeof(header)) != 0)
             {
                 stopWithMessage("The Game Card changed. Restart the app.");
+            }
+            if (!patches.empty() && (pressed & KEY_X))
+            {
+                np3d::beginPreparationLog("sd:/nitro-patcher", patches[selectedPatch]);
+                beginPatchProgress();
+                bool reused;
+                {
+                    auto card = openGameCard();
+                    auto prepared = np3d::prepare(card, patches[selectedPatch], "sd:/nitro-patcher");
+                    finishPatchProgress(prepared.reused);
+                    reused = prepared.reused;
+                }
+                np3d::finishPreparationLog(reused);
+                stopWithMessage("Restart the app to return.\nCache preparation is complete.");
             }
 #if NP3D_DIAGNOSTIC
             prepareDiagnostic();
