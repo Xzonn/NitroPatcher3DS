@@ -1,6 +1,7 @@
 .PHONY: all launcher bootstrap verify patch-arm9 host
 
 export DIAGNOSTIC ?= 0
+export LAUNCH_TRACE ?= 0
 
 all: launcher bootstrap
 
@@ -10,11 +11,15 @@ patch-arm9:
 host:
 	$(MAKE) -C source/patch MODE=host
 
-launcher: patch-arm9
+launcher: patch-arm9 bootstrap
 	mkdir -p build
-	printf '%s\n' "$(DIAGNOSTIC)" > build/launcher-mode.next
+	printf '%s %s\n' "$(DIAGNOSTIC)" "$(LAUNCH_TRACE)" > build/launcher-mode.next
 	if ! cmp -s build/launcher-mode.next build/launcher-mode; then $(MAKE) -C vendor/TWiLightMenu/slot1launch clean; fi
 	mv build/launcher-mode.next build/launcher-mode
+	$(MAKE) -C vendor/TWiLightMenu/universal/bootloader_app LOADBIN=$(CURDIR)/build/np3d_load.bin
+	mkdir -p vendor/TWiLightMenu/slot1launch/data
+	cp build/np3d_load.bin vendor/TWiLightMenu/slot1launch/data/np3d_load.bin
+	cp out/nds-bootstrap.nds vendor/TWiLightMenu/slot1launch/data/np3d_bootstrap.twl.bin
 	$(MAKE) -C vendor/TWiLightMenu/slot1launch
 	mkdir -p out
 	cp vendor/TWiLightMenu/slot1launch/slot1launch.nds out/NitroPatcher3DS.nds
@@ -22,6 +27,9 @@ launcher: patch-arm9
 	cp vendor/TWiLightMenu/slot1launch/slot1launch.arm7.elf out/NitroPatcher3DS.arm7.elf
 
 bootstrap: build/lzss
+	printf '%s\n' "$(LAUNCH_TRACE)" > build/bootstrap-mode.next
+	if ! cmp -s build/bootstrap-mode.next build/bootstrap-mode; then for directory in arm9 bootloaderi bootloaderi2 cardenginei/arm7 cardenginei/arm7_alt cardenginei/arm7_twlsdk cardenginei/arm7_twlsdk3; do $(MAKE) -C vendor/nds-bootstrap/retail/$$directory clean || exit $$?; done; fi
+	mv build/bootstrap-mode.next build/bootstrap-mode
 	PATH="$(CURDIR)/build:$$PATH" $(MAKE) -C vendor/nds-bootstrap/retail GIT_VER=eb7feabb
 	mkdir -p out
 	cp vendor/nds-bootstrap/retail/bin/nds-bootstrap.nds out/nds-bootstrap.nds

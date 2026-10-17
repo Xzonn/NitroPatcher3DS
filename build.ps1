@@ -1,5 +1,6 @@
 param(
-    [switch]$Diagnostic
+    [switch]$Diagnostic,
+    [switch]$LaunchTrace
 )
 
 $ErrorActionPreference = "Stop"
@@ -12,7 +13,7 @@ try {
         throw "Build environment setup failed with exit code $LASTEXITCODE."
     }
 
-    docker run --rm --mount "type=bind,source=$projectRoot,target=/work" --workdir /work nitropatcher3ds-build:20241104 make verify "DIAGNOSTIC=$([int]$Diagnostic.IsPresent)"
+    docker run --rm --mount "type=bind,source=$projectRoot,target=/work" --workdir /work nitropatcher3ds-build:20241104 make verify "DIAGNOSTIC=$([int]$Diagnostic.IsPresent)" "LAUNCH_TRACE=$([int]$LaunchTrace.IsPresent)"
     if ($LASTEXITCODE -ne 0) {
         throw "Build failed with exit code $LASTEXITCODE."
     }

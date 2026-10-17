@@ -11,6 +11,7 @@
 #include "card_source.h"
 #include "progress.h"
 #include "environment.h"
+#include "patched_launch.h"
 
 bool scfgUnlock = false;
 int TWLMODE = 0;
@@ -73,7 +74,22 @@ static void runEnvironmentDump()
     consoleClear();
     iprintf("Collecting environment report...\n");
     dumpEnvironment();
-    stopWithMessage("Saved nitro-patcher/logs/\nenvironment.log\nRestart the app to return.");
+    iprintf("Saved nitro-patcher/logs/\nenvironment.log\n\nB: Return to menu\n");
+    do {
+        swiWaitForVBlank();
+        scanKeys();
+    } while (!(keysDown() & KEY_B));
+    consoleDemoInit();
+}
+
+static void resetGameCard()
+{
+    sysSetCardOwner(BUS_OWNER_ARM7);
+    fifoSendValue32(FIFO_USER_08, 1);
+    fifoWaitValue32(FIFO_USER_08);
+    np3d::require(fifoGetValue32(FIFO_USER_08) == 0, "Cannot reset the Game Card");
+    for (int frame = 0; frame < 30; frame++) swiWaitForVBlank();
+    sysSetCardOwner(BUS_OWNER_ARM9);
 }
 
 int main()
@@ -137,33 +153,43 @@ int main()
     char gameCode[5] = {};
     std::memcpy(title, gameHeader->gameTitle, 12);
     std::memcpy(gameCode, gameHeader->gameCode, 4);
-    iprintf("%s\n%s\n\n", title, gameCode);
-#if NP3D_DIAGNOSTIC
-    iprintf("Diagnostic build\n");
-    iprintf("Log: nitro-patcher/logs/\nNP3DTRACE.BIN\n");
-    iprintf("After black screen, wait 15s.\n");
-    iprintf("Hold L+R+Up+X for 2s, wait 5s,\nthen power off and copy the log.\n\n");
-#endif
-    iprintf("A: Start Game Card\n");
-    iprintf("Y: Environment report\n");
-    if (patches.empty())
-    {
-        iprintf("Place .xzp files in\nnitro-patcher/patches/\n");
-    }
-    else
-    {
-        iprintf("Up/Down: Select patch\nX: Prepare patch cache\n");
-    }
+    bool redrawMenu = true;
     bool redrawPatch = !patches.empty();
 
     while (true)
     {
+        if (redrawMenu)
+        {
+            consoleClear();
+            iprintf("NitroPatcher3DS by Xzonn\n\n%s\n%s\n\n", title, gameCode);
+#if NP3D_DIAGNOSTIC
+            iprintf("Diagnostic build\n");
+            iprintf("Log: nitro-patcher/logs/\nNP3DTRACE.BIN\n");
+            iprintf("After black screen, wait 15s.\n");
+            iprintf("Hold L+R+Up+X for 2s, wait 5s,\nthen power off and copy the log.\n\n");
+#endif
+            iprintf("A: Start Game Card\n");
+            iprintf("Y: Environment report\n");
+            if (patches.empty())
+            {
+                iprintf("Place .xzp files in\nnitro-patcher/patches/\n");
+            }
+            else
+            {
+                iprintf("Up/Down: Select patch\nX: Prepare patch cache\n");
+                iprintf("START: Start patched game\n");
+            }
+            redrawMenu = false;
+            redrawPatch = !patches.empty();
+        }
         swiWaitForVBlank();
         scanKeys();
         unsigned int pressed = keysDown();
         if (pressed & KEY_Y)
         {
             runEnvironmentDump();
+            redrawMenu = true;
+            continue;
         }
         if (!patches.empty() && (pressed & (KEY_UP | KEY_DOWN)))
         {
@@ -176,27 +202,49 @@ int main()
                 patches[selectedPatch].substr(patches[selectedPatch].find_last_of('/') + 1).c_str());
             redrawPatch = false;
         }
-        if ((pressed & KEY_A) || (!patches.empty() && (pressed & KEY_X)))
+        if ((pressed & KEY_A) || (!patches.empty() && (pressed & (KEY_X | KEY_START))))
         {
+            resetGameCard();
             alignas(4) unsigned char currentHeader[0x200];
             cardReadHeader(currentHeader);
             if (std::memcmp(header, currentHeader, sizeof(header)) != 0)
             {
                 stopWithMessage("The Game Card changed. Restart the app.");
             }
-            if (!patches.empty() && (pressed & KEY_X))
+            if (!patches.empty() && (pressed & (KEY_X | KEY_START)))
             {
                 np3d::beginPreparationLog("sd:/nitro-patcher", patches[selectedPatch]);
                 beginPatchProgress();
                 bool reused;
+                std::string error;
                 {
-                    auto card = openGameCard();
+                    uint32_t chipId;
+                    auto card = openGameCard(&chipId);
                     auto prepared = np3d::prepare(card, patches[selectedPatch], "sd:/nitro-patcher");
-                    finishPatchProgress(prepared.reused);
+                    error = prepared.error;
+                    if (error.empty())
+                    {
+                        if (pressed & KEY_START) writePatchedLaunch(prepared, card, chipId);
+                        finishPatchProgress(prepared.reused);
+                    }
+                    else np3d::setProgressHandler(nullptr);
                     reused = prepared.reused;
                 }
-                np3d::finishPreparationLog(reused);
-                stopWithMessage("Restart the app to return.\nCache preparation is complete.");
+                np3d::finishPreparationLog(reused, error);
+                if (!error.empty())
+                {
+                    consoleDemoInit();
+                    iprintf("\n%s\n", error.c_str());
+                }
+                else if (pressed & KEY_START) startPatchedGame();
+                iprintf("\nB: Return to menu\n");
+                do {
+                    swiWaitForVBlank();
+                    scanKeys();
+                } while (!(keysDown() & KEY_B));
+                consoleDemoInit();
+                redrawMenu = true;
+                continue;
             }
 #if NP3D_DIAGNOSTIC
             prepareDiagnostic();

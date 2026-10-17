@@ -154,7 +154,7 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
         removeTree(pending);
         makeDirectory(pending);
         std::string patchId;
-        {
+        bool matchesCard = [&]() {
             Workspace work(pending + "/work", card);
             Package package(path, work);
             if (package.has("md5.txt")) {
@@ -174,7 +174,7 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
                     if (end == content.size()) break;
                     first = end + 1;
                 }
-                require(matched, "XZP does not match this Game Card (MD5 mismatch)");
+                if (!matched) return false;
                 logPreparation("MD5 matched " + romMd5);
             }
             if (package.has("metadata.json")) {
@@ -216,6 +216,11 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
             cJSON_AddNumberToObject(metadata.get(), "mapSize", final.table->size);
             cJSON_AddNumberToObject(metadata.get(), "dataSize", final.payload->size);
             writeJson(pending + "/manifest.json", metadata.get());
+            return true;
+        }();
+        if (!matchesCard) {
+            removeTree(pending);
+            return {"", nullptr, false, "XZP does not match this Game Card (MD5 mismatch)"};
         }
         progress("Removing temporary files", 0, 0);
         removeTree(pending + "/work");

@@ -1,4 +1,4 @@
 #pragma once
 #include "../patch/core.h"
 
-np3d::SourcePtr openGameCard();
+np3d::SourcePtr openGameCard(uint32_t* chipId = nullptr);

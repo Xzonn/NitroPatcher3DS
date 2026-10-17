@@ -15,7 +15,7 @@ struct GameCard final : np3d::Source {
     alignas(4) uint32_t block[128];
     uint32_t blockOffset = UINT32_MAX;
 
-    GameCard() {
+    GameCard(uint32_t* chipId) {
         using namespace np3d;
         auto& header = *reinterpret_cast<sNDSHeaderExt*>(headerData);
         progress("Reading Game Card header", 0, 0x1000, true);
@@ -33,6 +33,7 @@ struct GameCard final : np3d::Source {
         }
         progress("Initializing Game Card", 0, 0);
         require(cardInit(&header, &id) == 0, "Cannot initialize Game Card for patch preparation");
+        if (chipId) *chipId = id;
         require(header.deviceSize <= 13, "Game Card exceeds supported ROM size");
         size = 0x20000u << header.deviceSize;
         progress("Reading secure area", 0, 0x4000, true);
@@ -74,4 +75,4 @@ struct GameCard final : np3d::Source {
 
 }
 
-np3d::SourcePtr openGameCard() { return std::make_shared<GameCard>(); }
+np3d::SourcePtr openGameCard(uint32_t* chipId) { return std::make_shared<GameCard>(chipId); }

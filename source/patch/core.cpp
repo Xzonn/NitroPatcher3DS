@@ -86,8 +86,8 @@ void beginPreparationLog(const std::string& root, const std::string& patch) {
     logPreparation("BEGIN patch=" + patch);
 }
 
-void finishPreparationLog(bool reused) {
-    logPreparation(reused ? "SUCCESS cache reused" : "SUCCESS cache prepared");
+void finishPreparationLog(bool reused, const std::string& error) {
+    logPreparation(error.empty() ? (reused ? "SUCCESS cache reused" : "SUCCESS cache prepared") : "ERROR " + error);
     FILE* output = preparationLog;
     preparationLog = nullptr;
     if (output) require(std::fclose(output) == 0, "Cannot close preparation log");

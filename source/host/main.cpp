@@ -1,4 +1,5 @@
 #include "core.h"
+#include <cstdlib>
 #include <cstring>
 
 int main(int argc, char** argv) {
@@ -14,7 +15,11 @@ int main(int argc, char** argv) {
     beginPreparationLog(root, patch);
     auto card = std::make_shared<Disk>(argv[1]);
     Prepared prepared = prepare(card, patch, root);
-    finishPreparationLog(prepared.reused);
+    finishPreparationLog(prepared.reused, prepared.error);
+    if (!prepared.error.empty()) {
+        std::fprintf(stderr, "%s\n", prepared.error.c_str());
+        return EXIT_FAILURE;
+    }
     Disk output(argv[4], "wb");
     std::vector<uint8_t> buffer(BufferSize);
     for (uint32_t offset = 0; offset < prepared.rom->size;) {

@@ -23,7 +23,7 @@ using ProgressHandler = void (*)(const char*, uint32_t, uint32_t, bool, const ch
 void setProgressHandler(ProgressHandler handler);
 void progress(const char* stage, uint32_t completed, uint32_t total, bool bytes = false, const char* detail = "");
 void beginPreparationLog(const std::string& root, const std::string& patch);
-void finishPreparationLog(bool reused);
+void finishPreparationLog(bool reused, const std::string& error = "");
 void logPreparation(const std::string& message);
 uint64_t preparationMilliseconds();
 
@@ -107,6 +107,7 @@ struct Prepared {
     std::string directory;
     std::shared_ptr<Map> rom;
     bool reused = false;
+    std::string error;
 };
 Prepared prepare(SourcePtr card, const std::string& patch, const std::string& root);
 std::vector<std::string> listPatches(const std::string& root);
