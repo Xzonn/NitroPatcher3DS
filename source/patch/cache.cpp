@@ -54,7 +54,7 @@ static bool complete(const std::string& directory, const std::string& rom, const
     auto metadata = readJson(directory + "/manifest.json");
     if (!cJSON_IsObject(metadata.get()) || !number(metadata.get(), "format", FormatVersion)
         || !number(metadata.get(), "rules", RulesVersion) || text(metadata.get(), "romMd5") != rom
-        || text(metadata.get(), "patchSha256") != patch || text(metadata.get(), "cardIdentity") != identity
+        || text(metadata.get(), "patchCrc32") != patch || text(metadata.get(), "cardIdentity") != identity
         || !number(metadata.get(), "cardSize", cardSize)) return false;
     Disk map(directory + "/map.bin"), data(directory + "/data.bin");
     return number(metadata.get(), "mapSize", map.size) && number(metadata.get(), "dataSize", data.size);
@@ -70,12 +70,12 @@ static void updatePatchIndex(const std::string& root, const std::string& rom,
     if (exists(path)) {
         auto index = readJson(path);
         require(cJSON_IsObject(index.get()), "Invalid patch cache index");
-        previous = text(index.get(), "patchSha256");
-        require(hexString(previous, 64), "Invalid patch cache identity");
+        previous = text(index.get(), "patchCrc32");
+        require(hexString(previous, 8), "Invalid patch cache identity");
         if (previous == hash) return;
     }
     auto index = object();
-    cJSON_AddStringToObject(index.get(), "patchSha256", hash.c_str());
+    cJSON_AddStringToObject(index.get(), "patchCrc32", hash.c_str());
     writeJson(path, index.get());
     if (previous.empty()) return;
     DIR* entries = opendir(directory.c_str());
@@ -86,7 +86,7 @@ static void updatePatchIndex(const std::string& root, const std::string& rom,
         if (name.size() < 5 || name.substr(name.size() - 5) != ".json") continue;
         auto other = readJson(directory + "/" + name);
         require(cJSON_IsObject(other.get()), "Invalid patch cache index");
-        if (text(other.get(), "patchSha256") == previous) referenced = true;
+        if (text(other.get(), "patchCrc32") == previous) referenced = true;
     }
     require(closedir(entries) == 0, "Cannot close patch cache index");
     if (!referenced) removeTree(root + "/cache/" + rom + "/" + previous);
@@ -132,17 +132,17 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
     }
     auto patch = std::make_shared<Disk>(path);
     logPreparation("CARD identity=" + identity + " md5=" + romMd5 + " size=" + std::to_string(card->size));
-    std::string patchSha = digest(patch, true, "Reading patch");
+    std::string patchCrc = digest(patch, true, "Reading patch");
     patch.reset();
     makeDirectory(root + "/cache/" + romMd5);
-    std::string directory = root + "/cache/" + romMd5 + "/" + patchSha;
-    logPreparation("CACHE directory=" + directory + " patchSha256=" + patchSha);
+    std::string directory = root + "/cache/" + romMd5 + "/" + patchCrc;
+    logPreparation("CACHE directory=" + directory + " patchCrc32=" + patchCrc);
     makeDirectory(directory);
     std::string ready = directory + "/ready", pending = directory + "/pending";
     progress("Looking for cache", 0, 0);
-    bool reused = complete(ready, romMd5, patchSha, identity, card->size);
+    bool reused = complete(ready, romMd5, patchCrc, identity, card->size);
     logPreparation(std::string("CACHE ready complete=") + (reused ? "true" : "false"));
-    if (!reused && complete(pending, romMd5, patchSha, identity, card->size)) {
+    if (!reused && complete(pending, romMd5, patchCrc, identity, card->size)) {
         removeTree(ready);
         logPreparation("CACHE recover begin " + pending);
         require(std::rename(pending.c_str(), ready.c_str()) == 0, "Cannot recover completed cache");
@@ -213,7 +213,7 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
             cJSON_AddNumberToObject(metadata.get(), "format", FormatVersion);
             cJSON_AddNumberToObject(metadata.get(), "rules", RulesVersion);
             cJSON_AddStringToObject(metadata.get(), "romMd5", romMd5.c_str());
-            cJSON_AddStringToObject(metadata.get(), "patchSha256", patchSha.c_str());
+            cJSON_AddStringToObject(metadata.get(), "patchCrc32", patchCrc.c_str());
             cJSON_AddStringToObject(metadata.get(), "patchId", patchId.c_str());
             cJSON_AddStringToObject(metadata.get(), "cardIdentity", identity.c_str());
             cJSON_AddNumberToObject(metadata.get(), "cardSize", card->size);
@@ -242,7 +242,7 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
     std::string patchId = text(metadata.get(), "patchId");
     if (patchId.empty()) patchId = normalize(path.substr(path.find_last_of('/') + 1));
     progress("Finishing cache", 0, 0);
-    updatePatchIndex(root, romMd5, patchSha, patchId);
+    updatePatchIndex(root, romMd5, patchCrc, patchId);
     auto payload = std::make_shared<Disk>(ready + "/data.bin");
     auto rom = std::make_shared<Map>(ready + "/map.bin", payload, card, false);
     require(number(metadata.get(), "romSize", rom->size), "Invalid cached ROM length");
@@ -278,14 +278,14 @@ Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const st
         hashes += digest(std::make_shared<Disk>(path), true, "Reading patch") + "\n";
         names += path.substr(path.find_last_of('/') + 1) + "\n";
     }
-    std::string patchSha = digest(hashes.data(), hashes.size(), true);
+    std::string patchCrc = digest(hashes.data(), hashes.size(), true);
     makeDirectory(root + "/cache/" + romMd5);
-    std::string directory = root + "/cache/" + romMd5 + "/" + patchSha;
+    std::string directory = root + "/cache/" + romMd5 + "/" + patchCrc;
     makeDirectory(directory);
     std::string ready = directory + "/ready", pending = directory + "/pending";
     progress("Looking for cache",0,0);
-    bool reused = complete(ready, romMd5, patchSha, identity, card->size);
-    if (!reused && complete(pending, romMd5, patchSha, identity, card->size)) {
+    bool reused = complete(ready, romMd5, patchCrc, identity, card->size);
+    if (!reused && complete(pending, romMd5, patchCrc, identity, card->size)) {
         removeTree(ready);
         require(std::rename(pending.c_str(), ready.c_str()) == 0, "Cannot recover completed cache");
         reused = true;
@@ -348,7 +348,7 @@ Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const st
             cJSON_AddNumberToObject(metadata.get(), "format", FormatVersion);
             cJSON_AddNumberToObject(metadata.get(), "rules", RulesVersion);
             cJSON_AddStringToObject(metadata.get(), "romMd5", romMd5.c_str());
-            cJSON_AddStringToObject(metadata.get(), "patchSha256", patchSha.c_str());
+            cJSON_AddStringToObject(metadata.get(), "patchCrc32", patchCrc.c_str());
             cJSON_AddStringToObject(metadata.get(), "cardIdentity", identity.c_str());
             cJSON_AddNumberToObject(metadata.get(), "cardSize", card->size);
             cJSON_AddNumberToObject(metadata.get(), "romSize", final.size);
@@ -366,7 +366,7 @@ Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const st
         removeTree(ready);
         require(std::rename(pending.c_str(), ready.c_str()) == 0, "Cannot publish prepared cache");
     }
-    updatePatchIndex(root, romMd5, patchSha, "chain:" + names);
+    updatePatchIndex(root, romMd5, patchCrc, "chain:" + names);
     auto metadata = readJson(ready + "/manifest.json");
     auto payload = std::make_shared<Disk>(ready + "/data.bin");
     auto rom = std::make_shared<Map>(ready + "/map.bin", payload, card, false);

@@ -86,8 +86,8 @@ bool exists(const std::string& path);
 void removeTree(const std::string& path);
 std::vector<uint8_t> readBytes(SourcePtr source, uint32_t offset, uint32_t length);
 void copyFile(const std::string& input, const std::string& output);
-std::string digest(SourcePtr source, bool sha256, const char* stage = nullptr);
-std::string digest(const void* data, uint32_t length, bool sha256);
+std::string digest(SourcePtr source, bool crc32, const char* stage = nullptr);
+std::string digest(const void* data, uint32_t length, bool crc32);
 std::string normalize(std::string value);
 std::string convert(const std::string& value, const char* encoding);
 

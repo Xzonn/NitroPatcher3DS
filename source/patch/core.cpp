@@ -14,7 +14,7 @@
 #include <unistd.h>
 
 #include "mbedtls/md5.h"
-#include "mbedtls/sha256.h"
+#include "miniz.h"
 
 namespace np3d {
 
@@ -397,34 +397,41 @@ static std::string hex(const uint8_t* data, unsigned int length) {
     return result;
 }
 
-std::string digest(SourcePtr input, bool sha256, const char* stage) {
+static std::string crcHex(mz_ulong crc) {
+    char value[9];
+    std::snprintf(value, sizeof(value), "%08lx", static_cast<unsigned long>(crc));
+    return value;
+}
+
+std::string digest(SourcePtr input, bool crc32, const char* stage) {
     mbedtls_md5_context md5;
-    mbedtls_sha256_context sha;
-    mbedtls_md5_init(&md5);
-    mbedtls_sha256_init(&sha);
-    require((sha256 ? mbedtls_sha256_starts_ret(&sha, 0) : mbedtls_md5_starts_ret(&md5)) == 0, "Cannot initialize digest");
+    if (!crc32) {
+        mbedtls_md5_init(&md5);
+        require(mbedtls_md5_starts_ret(&md5) == 0, "Cannot initialize digest");
+    }
+    mz_ulong crc = MZ_CRC32_INIT;
     std::vector<uint8_t> buffer(BufferSize);
     if (stage) progress(stage, 0, input->size, true);
     for (uint32_t offset = 0; offset < input->size;) {
         uint32_t length = std::min(BufferSize, input->size - offset);
         input->read(offset, buffer.data(), length);
-        require((sha256 ? mbedtls_sha256_update_ret(&sha, buffer.data(), length)
-            : mbedtls_md5_update_ret(&md5, buffer.data(), length)) == 0, "Cannot update digest");
+        if (crc32) crc = mz_crc32(crc, buffer.data(), length);
+        else require(mbedtls_md5_update_ret(&md5, buffer.data(), length) == 0, "Cannot update digest");
         offset += length;
         if (stage) progress(stage, offset, input->size, true);
     }
-    uint8_t bytes[32];
-    require((sha256 ? mbedtls_sha256_finish_ret(&sha, bytes) : mbedtls_md5_finish_ret(&md5, bytes)) == 0, "Cannot finish digest");
+    if (crc32) return crcHex(crc);
+    uint8_t bytes[16];
+    require(mbedtls_md5_finish_ret(&md5, bytes) == 0, "Cannot finish digest");
     mbedtls_md5_free(&md5);
-    mbedtls_sha256_free(&sha);
-    return hex(bytes, sha256 ? 32 : 16);
+    return hex(bytes, 16);
 }
 
-std::string digest(const void* input, uint32_t length, bool sha256) {
-    uint8_t bytes[32];
-    require((sha256 ? mbedtls_sha256_ret(static_cast<const uint8_t*>(input), length, bytes, 0)
-        : mbedtls_md5_ret(static_cast<const uint8_t*>(input), length, bytes)) == 0, "Cannot calculate digest");
-    return hex(bytes, sha256 ? 32 : 16);
+std::string digest(const void* input, uint32_t length, bool crc32) {
+    if (crc32) return crcHex(mz_crc32(MZ_CRC32_INIT, static_cast<const uint8_t*>(input), length));
+    uint8_t bytes[16];
+    require(mbedtls_md5_ret(static_cast<const uint8_t*>(input), length, bytes) == 0, "Cannot calculate digest");
+    return hex(bytes, 16);
 }
 
 std::string normalize(std::string value) {
