@@ -1,0 +1,10 @@
+/out/
+/temp/
+/build/
+/.venv/
+**/build/
+**/*.o
+**/*.d
+**/*.elf
+**/*.map
+**/*.lst

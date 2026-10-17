@@ -1,0 +1,6 @@
+[submodule "vendor/TWiLightMenu"]
+	path = vendor/TWiLightMenu
+	url = https://github.com/Xzonn/TWiLightMenu.git
+[submodule "vendor/nds-bootstrap"]
+	path = vendor/nds-bootstrap
+	url = https://github.com/Xzonn/nds-bootstrap.git
