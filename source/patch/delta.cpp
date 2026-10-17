@@ -77,6 +77,11 @@ std::shared_ptr<Map> applyDelta(Workspace& work, SourcePtr source, const std::st
     require(xd3_config_stream(&stream, &config) == 0, "Cannot initialize xdelta3");
     stream.external_emit = emit;
     stream.external_adler32 = checksum;
+    auto reject = [&](const char* message) -> std::shared_ptr<Map> {
+        work.error = std::string("Cannot decode VCDIFF: ") + message + " | " + label;
+        xd3_free_stream(&stream);
+        return nullptr;
+    };
     xd3_source original = {};
     original.blksize = BufferSize;
     require(xd3_set_source_and_size(&stream, &original, source->size) == 0, "Cannot configure VCDIFF source");
@@ -88,7 +93,7 @@ std::shared_ptr<Map> applyDelta(Workspace& work, SourcePtr source, const std::st
         logPreparation("DELTA decode done status=" + std::to_string(status) + " outputSize=" + std::to_string(output.target->size));
         if (status == XD3_INPUT) {
             if (offset == input.size) {
-                require(xd3_close_stream(&stream) == 0, stream.msg ? stream.msg : "Incomplete VCDIFF stream");
+                if (xd3_close_stream(&stream) != 0) return reject(stream.msg ? stream.msg : "Incomplete VCDIFF stream");
                 break;
             }
             uint32_t take = std::min(BufferSize, input.size - offset);
@@ -104,10 +109,10 @@ std::shared_ptr<Map> applyDelta(Workspace& work, SourcePtr source, const std::st
             output.adler = 1;
             progress("Applying patch section", 0, stream.dec_tgtlen, true, label.c_str());
         } else if (status != XD3_WINFINISH) {
-            fail(std::string("Cannot decode VCDIFF: ") + (stream.msg ? stream.msg : "invalid stream"));
+            return reject(stream.msg ? stream.msg : "invalid stream");
         }
     }
-    require(stream.dec_window_count > 0, "VCDIFF contains no target windows");
+    if (!stream.dec_window_count) return reject("VCDIFF contains no target windows");
     xd3_free_stream(&stream);
     output.target->finish();
     logPreparation("DELTA done name=" + label + " outputSize=" + std::to_string(output.target->size));

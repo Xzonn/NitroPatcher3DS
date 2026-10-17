@@ -18,10 +18,11 @@ try {
         throw "Build failed with exit code $LASTEXITCODE."
     }
 
-    & ./vendor/TWiLightMenu/booter/make_cia.exe --srl=out/NitroPatcher3DS.nds
+    & ./vendor/TWiLightMenu/booter/make_cia.exe --srl=out/NitroPatcher3DS.nds --micro=1
     if ($LASTEXITCODE -ne 0) {
         throw "CIA packaging failed with exit code $LASTEXITCODE."
     }
+    Compress-Archive -Path out/NitroPatcher3DS.cia,out/licenses -DestinationPath out/NitroPatcher3DS.zip -Force
 }
 finally {
     Pop-Location

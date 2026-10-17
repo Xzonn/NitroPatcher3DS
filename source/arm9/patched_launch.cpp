@@ -1,7 +1,7 @@
 #include "patched_launch.h"
 #include "../../vendor/nds-bootstrap/retail/common/include/np3d_rom.h"
 #include "common/nds_loader_arm9.h"
-#include "np3d_bootstrap_twl_bin.h"
+#include "resources.h"
 #include <cstring>
 #include <sys/stat.h>
 
@@ -23,11 +23,7 @@ void writePatchedLaunch(const np3d::Prepared& prepared, np3d::SourcePtr card, ui
     using namespace np3d;
     makeDirectory("sd:/nitro-patcher/config");
     makeDirectory("sd:/nitro-patcher/runtime");
-    {
-        Disk bootstrap("sd:/nitro-patcher/runtime/bootstrap.nds", "wb");
-        bootstrap.write(0, np3d_bootstrap_twl_bin, np3d_bootstrap_twl_bin_size);
-        bootstrap.sync();
-    }
+    writeResource("bootstrap.nds", "sd:/nitro-patcher/runtime/bootstrap.nds");
     Np3dLaunch launch = {};
     launch.magic = NP3D_LAUNCH_MAGIC;
     launch.version = 1;

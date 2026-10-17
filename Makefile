@@ -2,6 +2,7 @@
 
 export DIAGNOSTIC ?= 0
 export LAUNCH_TRACE ?= 0
+export NP3D_VERSION := $(shell git describe --always --dirty)
 
 all: launcher bootstrap
 
@@ -19,12 +20,18 @@ launcher: patch-arm9 bootstrap
 	$(MAKE) -C vendor/TWiLightMenu/universal/bootloader_app LOADBIN=$(CURDIR)/build/np3d_load.bin
 	mkdir -p vendor/TWiLightMenu/slot1launch/data
 	cp build/np3d_load.bin vendor/TWiLightMenu/slot1launch/data/np3d_load.bin
-	cp out/nds-bootstrap.nds vendor/TWiLightMenu/slot1launch/data/np3d_bootstrap.twl.bin
+	rm -f vendor/TWiLightMenu/slot1launch/data/np3d_bootstrap.twl.bin
+	python3 source/build_resources.py
 	$(MAKE) -C vendor/TWiLightMenu/slot1launch
 	mkdir -p out
 	cp vendor/TWiLightMenu/slot1launch/slot1launch.nds out/NitroPatcher3DS.nds
 	cp vendor/TWiLightMenu/slot1launch/slot1launch.arm9.elf out/NitroPatcher3DS.arm9.elf
 	cp vendor/TWiLightMenu/slot1launch/slot1launch.arm7.elf out/NitroPatcher3DS.arm7.elf
+	mkdir -p out/licenses
+	cp LICENSE out/licenses/NitroPatcher3DS.txt
+	cp vendor/md4c/LICENSE.md out/licenses/md4c.txt
+	cp vendor/fmt/LICENSE out/licenses/fmt.txt
+	cp assets/fonts/Gulim-OFL.txt assets/fonts/Gulim-AUTHORS.txt out/licenses/
 
 bootstrap: build/lzss
 	printf '%s\n' "$(LAUNCH_TRACE)" > build/bootstrap-mode.next

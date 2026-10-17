@@ -22,3 +22,9 @@
 [submodule "vendor/uni-algo"]
 	path = vendor/uni-algo
 	url = https://github.com/uni-algo/uni-algo.git
+[submodule "vendor/md4c"]
+	path = vendor/md4c
+	url = https://github.com/mity/md4c.git
+[submodule "vendor/fmt"]
+	path = vendor/fmt
+	url = https://github.com/fmtlib/fmt.git

@@ -1,0 +1,440 @@
+[
+  {
+    "index": 0,
+    "key": "patch_list.title",
+    "original": "Patches",
+    "translation": "Patches"
+  },
+  {
+    "index": 1,
+    "key": "patch_list.start",
+    "original": "Start",
+    "translation": "Start"
+  },
+  {
+    "index": 2,
+    "key": "patch_list.toggle",
+    "original": "Toggle",
+    "translation": "Toggle"
+  },
+  {
+    "index": 3,
+    "key": "menu.title",
+    "original": "Menu",
+    "translation": "Menu"
+  },
+  {
+    "index": 4,
+    "key": "language_selection.title",
+    "original": "Interface language",
+    "translation": "Interface language"
+  },
+  {
+    "index": 5,
+    "key": "common.back",
+    "original": "Back",
+    "translation": "Back"
+  },
+  {
+    "index": 6,
+    "key": "language_selection.confirm",
+    "original": "Select",
+    "translation": "Select"
+  },
+  {
+    "index": 7,
+    "key": "patch_list.show_info",
+    "original": "Info",
+    "translation": "Info"
+  },
+  {
+    "index": 8,
+    "key": "patch_info.description",
+    "original": "Description",
+    "translation": "Description"
+  },
+  {
+    "index": 9,
+    "key": "patch_info.name",
+    "original": "Name: {name}",
+    "translation": "Name: {name}"
+  },
+  {
+    "index": 10,
+    "key": "patch_info.author",
+    "original": "Author: {author}",
+    "translation": "Author: {author}"
+  },
+  {
+    "index": 11,
+    "key": "patch_info.homepage",
+    "original": "Homepage: {homepage}",
+    "translation": "Homepage: {homepage}"
+  },
+  {
+    "index": 12,
+    "key": "patch_info.version",
+    "original": "Version: {version}",
+    "translation": "Version: {version}"
+  },
+  {
+    "index": 13,
+    "key": "patch_info.beta_version",
+    "original": "{version} (Beta)",
+    "translation": "{version} (Beta)"
+  },
+  {
+    "index": 14,
+    "key": "patch_info.no_metadata",
+    "original": "No metadata provided",
+    "translation": "No metadata provided"
+  },
+  {
+    "index": 15,
+    "key": "patch_info.no_description",
+    "original": "No description provided",
+    "translation": "No description provided"
+  },
+  {
+    "index": 16,
+    "key": "about.title",
+    "original": "About",
+    "translation": "About"
+  },
+  {
+    "index": 17,
+    "key": "about.license",
+    "original": "License: {license}",
+    "translation": "License: {license}"
+  },
+  {
+    "index": 18,
+    "key": "about.components",
+    "original": "Open source projects",
+    "translation": "Open source projects"
+  },
+  {
+    "index": 19,
+    "key": "prepare.title",
+    "original": "Preparing patches",
+    "translation": "Preparing patches"
+  },
+  {
+    "index": 20,
+    "key": "prepare.elapsed",
+    "original": "Elapsed: {seconds} s",
+    "translation": "Elapsed: {seconds} s"
+  },
+  {
+    "index": 22,
+    "key": "prepare.working",
+    "original": "Working...",
+    "translation": "Working..."
+  },
+  {
+    "index": 23,
+    "key": "prepare.cache_reused",
+    "original": "Cache reused",
+    "translation": "Cache reused"
+  },
+  {
+    "index": 24,
+    "key": "patch_error.mismatch.title",
+    "original": "Patch does not match",
+    "translation": "Patch does not match"
+  },
+  {
+    "index": 25,
+    "key": "patch_error.mismatch.body",
+    "original": "Check the selected patches and their order.",
+    "translation": "Check the selected patches and their order."
+  },
+  {
+    "index": 26,
+    "key": "menu.launch_original",
+    "original": "Start original",
+    "translation": "Start original"
+  },
+  {
+    "index": 27,
+    "key": "menu.environment_report",
+    "original": "Environment report",
+    "translation": "Environment report"
+  },
+  {
+    "index": 28,
+    "key": "environment_report.preparing",
+    "original": "Collecting environment report",
+    "translation": "Collecting environment report"
+  },
+  {
+    "index": 29,
+    "key": "environment_report.saved",
+    "original": "Report saved",
+    "translation": "Report saved"
+  },
+  {
+    "index": 30,
+    "key": "patch_list.empty.title",
+    "original": "No patches found",
+    "translation": "No patches found"
+  },
+  {
+    "index": 31,
+    "key": "patch_list.empty.body",
+    "original": "Put .xzp files in this folder:",
+    "translation": "Put .xzp files in this folder:"
+  },
+  {
+    "index": 32,
+    "key": "game_card.missing.title",
+    "original": "No Game Card found",
+    "translation": "No Game Card found"
+  },
+  {
+    "index": 33,
+    "key": "game_card.missing.body",
+    "original": "Insert a Game Card and reopen the app.",
+    "translation": "Insert a Game Card and reopen the app."
+  },
+  {
+    "index": 34,
+    "key": "error.title",
+    "original": "Read failed",
+    "translation": "Read failed"
+  },
+  {
+    "index": 35,
+    "key": "error.body",
+    "original": "Operation stopped. Check the error details.",
+    "translation": "Operation stopped. Check the error details."
+  },
+  {
+    "index": 36,
+    "key": "error.details",
+    "original": "Details",
+    "translation": "Details"
+  },
+  {
+    "index": 37,
+    "key": "error.fatal_body",
+    "original": "Record the error details and reopen the app.",
+    "translation": "Record the error details and reopen the app."
+  },
+  {
+    "index": 38,
+    "key": "game_card.loading",
+    "original": "Reading Game Card",
+    "translation": "Reading Game Card"
+  },
+  {
+    "index": 39,
+    "key": "game_card.changed",
+    "original": "Game Card changed. Reopen the app.",
+    "translation": "Game Card changed. Reopen the app."
+  },
+  {
+    "index": 40,
+    "key": "prepare.stage.read_card_header",
+    "original": "Reading card header",
+    "translation": "Reading card header"
+  },
+  {
+    "index": 41,
+    "key": "prepare.stage.initialize_card",
+    "original": "Initializing card",
+    "translation": "Initializing card"
+  },
+  {
+    "index": 42,
+    "key": "prepare.stage.read_secure_area",
+    "original": "Reading secure area",
+    "translation": "Reading secure area"
+  },
+  {
+    "index": 43,
+    "key": "prepare.stage.check_secure_area",
+    "original": "Checking secure area",
+    "translation": "Checking secure area"
+  },
+  {
+    "index": 44,
+    "key": "prepare.stage.read_card",
+    "original": "Reading Game Card",
+    "translation": "Reading Game Card"
+  },
+  {
+    "index": 45,
+    "key": "prepare.stage.read_patch",
+    "original": "Reading patch",
+    "translation": "Reading patch"
+  },
+  {
+    "index": 46,
+    "key": "prepare.stage.find_cache",
+    "original": "Looking for cache",
+    "translation": "Looking for cache"
+  },
+  {
+    "index": 47,
+    "key": "prepare.stage.remove_unfinished",
+    "original": "Removing unfinished files",
+    "translation": "Removing unfinished files"
+  },
+  {
+    "index": 48,
+    "key": "prepare.stage.read_patch_directory",
+    "original": "Reading patch directory",
+    "translation": "Reading patch directory"
+  },
+  {
+    "index": 49,
+    "key": "prepare.stage.extract",
+    "original": "Extracting files",
+    "translation": "Extracting files"
+  },
+  {
+    "index": 50,
+    "key": "prepare.stage.preprocess",
+    "original": "Game preprocessing",
+    "translation": "Game preprocessing"
+  },
+  {
+    "index": 51,
+    "key": "prepare.stage.read_game_directory",
+    "original": "Reading game directory",
+    "translation": "Reading game directory"
+  },
+  {
+    "index": 52,
+    "key": "prepare.stage.prepare_files",
+    "original": "Preparing game files",
+    "translation": "Preparing game files"
+  },
+  {
+    "index": 53,
+    "key": "prepare.stage.arrange_files",
+    "original": "Arranging game files",
+    "translation": "Arranging game files"
+  },
+  {
+    "index": 54,
+    "key": "prepare.stage.apply_patch",
+    "original": "Applying patch",
+    "translation": "Applying patch"
+  },
+  {
+    "index": 55,
+    "key": "prepare.stage.replace_file",
+    "original": "Replacing files",
+    "translation": "Replacing files"
+  },
+  {
+    "index": 56,
+    "key": "prepare.stage.write_cache",
+    "original": "Writing cache",
+    "translation": "Writing cache"
+  },
+  {
+    "index": 57,
+    "key": "prepare.stage.remove_temporary",
+    "original": "Removing temporary files",
+    "translation": "Removing temporary files"
+  },
+  {
+    "index": 58,
+    "key": "prepare.stage.finish_cache",
+    "original": "Finishing cache",
+    "translation": "Finishing cache"
+  },
+  {
+    "index": 59,
+    "key": "prepare.stage.check_cache",
+    "original": "Checking cache",
+    "translation": "Checking cache"
+  },
+  {
+    "index": 60,
+    "key": "prepare.stage.check_game_data",
+    "original": "Checking game data",
+    "translation": "Checking game data"
+  },
+  {
+    "index": 61,
+    "key": "prepare.stage.prepare_dsi",
+    "original": "Preparing DSi files",
+    "translation": "Preparing DSi files"
+  },
+  {
+    "index": 62,
+    "key": "prepare.stage.patch_sequence",
+    "original": "Patch sequence",
+    "translation": "Patch sequence"
+  },
+  {
+    "index": 63,
+    "key": "launch.starting",
+    "original": "Starting game",
+    "translation": "Starting game"
+  },
+  {
+    "index": 64,
+    "key": "language_selection.prompt",
+    "original": "Please select a language",
+    "translation": "Please select a language"
+  },
+  {
+    "index": 65,
+    "key": "about.author",
+    "original": "Author: {author}",
+    "translation": "Author: {author}"
+  },
+  {
+    "index": 66,
+    "key": "about.version",
+    "original": "Version: {version}",
+    "translation": "Version: {version}"
+  },
+  {
+    "index": 67,
+    "key": "common.key_hint",
+    "original": "{key} {action}",
+    "translation": "{key} {action}"
+  },
+  {
+    "index": 68,
+    "key": "common.item_counter",
+    "original": "{current}/{total}",
+    "translation": "{current}/{total}"
+  },
+  {
+    "index": 69,
+    "key": "common.percentage",
+    "original": "{percent}%",
+    "translation": "{percent}%"
+  },
+  {
+    "index": 70,
+    "key": "prepare.file_counter",
+    "original": "File {current}/{total}",
+    "translation": "File {current}/{total}"
+  },
+  {
+    "index": 71,
+    "key": "prepare.remaining",
+    "original": "Remaining: ~{seconds} s",
+    "translation": "Remaining: ~{seconds} s"
+  },
+  {
+    "index": 72,
+    "key": "prepare.estimating",
+    "original": "Remaining: estimating...",
+    "translation": "Remaining: estimating..."
+  },
+  {
+    "index": 73,
+    "key": "prepare.stage.launch_files",
+    "original": "Preparing launch files",
+    "translation": "Preparing launch files"
+  }
+]

@@ -97,6 +97,7 @@ struct Workspace {
     SourcePtr card;
     std::shared_ptr<Disk> payload;
     unsigned int next = 0;
+    std::string error;
     Workspace(const std::string& directory, SourcePtr card);
     std::shared_ptr<Map> map();
 };
@@ -108,8 +109,10 @@ struct Prepared {
     std::shared_ptr<Map> rom;
     bool reused = false;
     std::string error;
+    bool mismatch = false;
 };
 Prepared prepare(SourcePtr card, const std::string& patch, const std::string& root);
+Prepared prepare(SourcePtr card, const std::vector<std::string>& patches, const std::string& root);
 std::vector<std::string> listPatches(const std::string& root);
 
 }

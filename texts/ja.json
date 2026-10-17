@@ -1,0 +1,440 @@
+[
+  {
+    "index": 0,
+    "key": "patch_list.title",
+    "original": "Patches",
+    "translation": "パッチ選択"
+  },
+  {
+    "index": 1,
+    "key": "patch_list.start",
+    "original": "Start",
+    "translation": "起動"
+  },
+  {
+    "index": 2,
+    "key": "patch_list.toggle",
+    "original": "Toggle",
+    "translation": "選択/解除"
+  },
+  {
+    "index": 3,
+    "key": "menu.title",
+    "original": "Menu",
+    "translation": "メニュー"
+  },
+  {
+    "index": 4,
+    "key": "language_selection.title",
+    "original": "Interface language",
+    "translation": "表示言語"
+  },
+  {
+    "index": 5,
+    "key": "common.back",
+    "original": "Back",
+    "translation": "戻る"
+  },
+  {
+    "index": 6,
+    "key": "language_selection.confirm",
+    "original": "Select",
+    "translation": "選択"
+  },
+  {
+    "index": 7,
+    "key": "patch_list.show_info",
+    "original": "Info",
+    "translation": "情報"
+  },
+  {
+    "index": 8,
+    "key": "patch_info.description",
+    "original": "Description",
+    "translation": "説明"
+  },
+  {
+    "index": 9,
+    "key": "patch_info.name",
+    "original": "Name: {name}",
+    "translation": "名前：{name}"
+  },
+  {
+    "index": 10,
+    "key": "patch_info.author",
+    "original": "Author: {author}",
+    "translation": "作者：{author}"
+  },
+  {
+    "index": 11,
+    "key": "patch_info.homepage",
+    "original": "Homepage: {homepage}",
+    "translation": "サイト：{homepage}"
+  },
+  {
+    "index": 12,
+    "key": "patch_info.version",
+    "original": "Version: {version}",
+    "translation": "バージョン：{version}"
+  },
+  {
+    "index": 13,
+    "key": "patch_info.beta_version",
+    "original": "{version} (Beta)",
+    "translation": "{version}（ベータ版）"
+  },
+  {
+    "index": 14,
+    "key": "patch_info.no_metadata",
+    "original": "No metadata provided",
+    "translation": "情報がありません"
+  },
+  {
+    "index": 15,
+    "key": "patch_info.no_description",
+    "original": "No description provided",
+    "translation": "説明がありません"
+  },
+  {
+    "index": 16,
+    "key": "about.title",
+    "original": "About",
+    "translation": "このソフトについて"
+  },
+  {
+    "index": 17,
+    "key": "about.license",
+    "original": "License: {license}",
+    "translation": "ライセンス：{license}"
+  },
+  {
+    "index": 18,
+    "key": "about.components",
+    "original": "Open source projects",
+    "translation": "使用するオープンソース"
+  },
+  {
+    "index": 19,
+    "key": "prepare.title",
+    "original": "Preparing patches",
+    "translation": "パッチを準備中"
+  },
+  {
+    "index": 20,
+    "key": "prepare.elapsed",
+    "original": "Elapsed: {seconds} s",
+    "translation": "経過時間 {seconds} 秒"
+  },
+  {
+    "index": 22,
+    "key": "prepare.working",
+    "original": "Working...",
+    "translation": "処理中..."
+  },
+  {
+    "index": 23,
+    "key": "prepare.cache_reused",
+    "original": "Cache reused",
+    "translation": "キャッシュを再利用"
+  },
+  {
+    "index": 24,
+    "key": "patch_error.mismatch.title",
+    "original": "Patch does not match",
+    "translation": "パッチが対応していません"
+  },
+  {
+    "index": 25,
+    "key": "patch_error.mismatch.body",
+    "original": "Check the selected patches and their order.",
+    "translation": "パッチの組み合わせと順序を確認してください。"
+  },
+  {
+    "index": 26,
+    "key": "menu.launch_original",
+    "original": "Start original",
+    "translation": "通常起動"
+  },
+  {
+    "index": 27,
+    "key": "menu.environment_report",
+    "original": "Environment report",
+    "translation": "環境レポート"
+  },
+  {
+    "index": 28,
+    "key": "environment_report.preparing",
+    "original": "Collecting environment report",
+    "translation": "環境レポートを作成中"
+  },
+  {
+    "index": 29,
+    "key": "environment_report.saved",
+    "original": "Report saved",
+    "translation": "レポート保存完了"
+  },
+  {
+    "index": 30,
+    "key": "patch_list.empty.title",
+    "original": "No patches found",
+    "translation": "パッチがありません"
+  },
+  {
+    "index": 31,
+    "key": "patch_list.empty.body",
+    "original": "Put .xzp files in this folder:",
+    "translation": ".xzp ファイルを次の場所に入れてください："
+  },
+  {
+    "index": 32,
+    "key": "game_card.missing.title",
+    "original": "No Game Card found",
+    "translation": "カードがありません"
+  },
+  {
+    "index": 33,
+    "key": "game_card.missing.body",
+    "original": "Insert a Game Card and reopen the app.",
+    "translation": "ゲームカードを入れてアプリを起動し直してください。"
+  },
+  {
+    "index": 34,
+    "key": "error.title",
+    "original": "Read failed",
+    "translation": "読み込み失敗"
+  },
+  {
+    "index": 35,
+    "key": "error.body",
+    "original": "Operation stopped. Check the error details.",
+    "translation": "処理を停止しました。詳細を確認してください。"
+  },
+  {
+    "index": 36,
+    "key": "error.details",
+    "original": "Details",
+    "translation": "詳細"
+  },
+  {
+    "index": 37,
+    "key": "error.fatal_body",
+    "original": "Record the error details and reopen the app.",
+    "translation": "詳細を記録してアプリを起動し直してください。"
+  },
+  {
+    "index": 38,
+    "key": "game_card.loading",
+    "original": "Reading Game Card",
+    "translation": "カードを読み込み中"
+  },
+  {
+    "index": 39,
+    "key": "game_card.changed",
+    "original": "Game Card changed. Reopen the app.",
+    "translation": "カードが変わりました。アプリを起動し直してください。"
+  },
+  {
+    "index": 40,
+    "key": "prepare.stage.read_card_header",
+    "original": "Reading card header",
+    "translation": "カード情報を取得"
+  },
+  {
+    "index": 41,
+    "key": "prepare.stage.initialize_card",
+    "original": "Initializing card",
+    "translation": "カードを初期化"
+  },
+  {
+    "index": 42,
+    "key": "prepare.stage.read_secure_area",
+    "original": "Reading secure area",
+    "translation": "暗号領域を取得"
+  },
+  {
+    "index": 43,
+    "key": "prepare.stage.check_secure_area",
+    "original": "Checking secure area",
+    "translation": "暗号領域を確認"
+  },
+  {
+    "index": 44,
+    "key": "prepare.stage.read_card",
+    "original": "Reading Game Card",
+    "translation": "ゲームカードを取得"
+  },
+  {
+    "index": 45,
+    "key": "prepare.stage.read_patch",
+    "original": "Reading patch",
+    "translation": "パッチを取得"
+  },
+  {
+    "index": 46,
+    "key": "prepare.stage.find_cache",
+    "original": "Looking for cache",
+    "translation": "キャッシュを検索"
+  },
+  {
+    "index": 47,
+    "key": "prepare.stage.remove_unfinished",
+    "original": "Removing unfinished files",
+    "translation": "未完了ファイルを削除"
+  },
+  {
+    "index": 48,
+    "key": "prepare.stage.read_patch_directory",
+    "original": "Reading patch directory",
+    "translation": "パッチ目録を取得"
+  },
+  {
+    "index": 49,
+    "key": "prepare.stage.extract",
+    "original": "Extracting files",
+    "translation": "ファイルを展開"
+  },
+  {
+    "index": 50,
+    "key": "prepare.stage.preprocess",
+    "original": "Game preprocessing",
+    "translation": "ゲームを前処理"
+  },
+  {
+    "index": 51,
+    "key": "prepare.stage.read_game_directory",
+    "original": "Reading game directory",
+    "translation": "ゲーム目録を取得"
+  },
+  {
+    "index": 52,
+    "key": "prepare.stage.prepare_files",
+    "original": "Preparing game files",
+    "translation": "ゲームファイルを準備"
+  },
+  {
+    "index": 53,
+    "key": "prepare.stage.arrange_files",
+    "original": "Arranging game files",
+    "translation": "ゲームファイルを配置"
+  },
+  {
+    "index": 54,
+    "key": "prepare.stage.apply_patch",
+    "original": "Applying patch",
+    "translation": "パッチを適用"
+  },
+  {
+    "index": 55,
+    "key": "prepare.stage.replace_file",
+    "original": "Replacing files",
+    "translation": "ファイルを置換"
+  },
+  {
+    "index": 56,
+    "key": "prepare.stage.write_cache",
+    "original": "Writing cache",
+    "translation": "キャッシュを保存"
+  },
+  {
+    "index": 57,
+    "key": "prepare.stage.remove_temporary",
+    "original": "Removing temporary files",
+    "translation": "一時ファイルを削除"
+  },
+  {
+    "index": 58,
+    "key": "prepare.stage.finish_cache",
+    "original": "Finishing cache",
+    "translation": "キャッシュを完了"
+  },
+  {
+    "index": 59,
+    "key": "prepare.stage.check_cache",
+    "original": "Checking cache",
+    "translation": "キャッシュを確認"
+  },
+  {
+    "index": 60,
+    "key": "prepare.stage.check_game_data",
+    "original": "Checking game data",
+    "translation": "ゲームデータを確認"
+  },
+  {
+    "index": 61,
+    "key": "prepare.stage.prepare_dsi",
+    "original": "Preparing DSi files",
+    "translation": "DSi ファイルを準備"
+  },
+  {
+    "index": 62,
+    "key": "prepare.stage.patch_sequence",
+    "original": "Patch sequence",
+    "translation": "パッチの順序"
+  },
+  {
+    "index": 63,
+    "key": "launch.starting",
+    "original": "Starting game",
+    "translation": "起動中"
+  },
+  {
+    "index": 64,
+    "key": "language_selection.prompt",
+    "original": "Please select a language",
+    "translation": "言語を選択してください"
+  },
+  {
+    "index": 65,
+    "key": "about.author",
+    "original": "Author: {author}",
+    "translation": "作者：{author}"
+  },
+  {
+    "index": 66,
+    "key": "about.version",
+    "original": "Version: {version}",
+    "translation": "バージョン：{version}"
+  },
+  {
+    "index": 67,
+    "key": "common.key_hint",
+    "original": "{key} {action}",
+    "translation": "{key} {action}"
+  },
+  {
+    "index": 68,
+    "key": "common.item_counter",
+    "original": "{current}/{total}",
+    "translation": "{current}/{total}"
+  },
+  {
+    "index": 69,
+    "key": "common.percentage",
+    "original": "{percent}%",
+    "translation": "{percent}%"
+  },
+  {
+    "index": 70,
+    "key": "prepare.file_counter",
+    "original": "File {current}/{total}",
+    "translation": "ファイル {current}/{total}"
+  },
+  {
+    "index": 71,
+    "key": "prepare.remaining",
+    "original": "Remaining: ~{seconds} s",
+    "translation": "完了まで：約 {seconds} 秒"
+  },
+  {
+    "index": 72,
+    "key": "prepare.estimating",
+    "original": "Remaining: estimating...",
+    "translation": "完了までの時間：計算中..."
+  },
+  {
+    "index": 73,
+    "key": "prepare.stage.launch_files",
+    "original": "Preparing launch files",
+    "translation": "起動用ファイルを準備"
+  }
+]

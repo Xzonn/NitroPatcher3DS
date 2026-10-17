@@ -1,0 +1,440 @@
+[
+  {
+    "index": 0,
+    "key": "patch_list.title",
+    "original": "Patches",
+    "translation": "패치"
+  },
+  {
+    "index": 1,
+    "key": "patch_list.start",
+    "original": "Start",
+    "translation": "시작"
+  },
+  {
+    "index": 2,
+    "key": "patch_list.toggle",
+    "original": "Toggle",
+    "translation": "선택/해제"
+  },
+  {
+    "index": 3,
+    "key": "menu.title",
+    "original": "Menu",
+    "translation": "메뉴"
+  },
+  {
+    "index": 4,
+    "key": "language_selection.title",
+    "original": "Interface language",
+    "translation": "인터페이스 언어"
+  },
+  {
+    "index": 5,
+    "key": "common.back",
+    "original": "Back",
+    "translation": "뒤로"
+  },
+  {
+    "index": 6,
+    "key": "language_selection.confirm",
+    "original": "Select",
+    "translation": "선택"
+  },
+  {
+    "index": 7,
+    "key": "patch_list.show_info",
+    "original": "Info",
+    "translation": "정보"
+  },
+  {
+    "index": 8,
+    "key": "patch_info.description",
+    "original": "Description",
+    "translation": "소개"
+  },
+  {
+    "index": 9,
+    "key": "patch_info.name",
+    "original": "Name: {name}",
+    "translation": "이름: {name}"
+  },
+  {
+    "index": 10,
+    "key": "patch_info.author",
+    "original": "Author: {author}",
+    "translation": "제작자: {author}"
+  },
+  {
+    "index": 11,
+    "key": "patch_info.homepage",
+    "original": "Homepage: {homepage}",
+    "translation": "홈페이지: {homepage}"
+  },
+  {
+    "index": 12,
+    "key": "patch_info.version",
+    "original": "Version: {version}",
+    "translation": "버전: {version}"
+  },
+  {
+    "index": 13,
+    "key": "patch_info.beta_version",
+    "original": "{version} (Beta)",
+    "translation": "{version} (베타)"
+  },
+  {
+    "index": 14,
+    "key": "patch_info.no_metadata",
+    "original": "No metadata provided",
+    "translation": "메타데이터가 없습니다"
+  },
+  {
+    "index": 15,
+    "key": "patch_info.no_description",
+    "original": "No description provided",
+    "translation": "소개가 없습니다"
+  },
+  {
+    "index": 16,
+    "key": "about.title",
+    "original": "About",
+    "translation": "정보"
+  },
+  {
+    "index": 17,
+    "key": "about.license",
+    "original": "License: {license}",
+    "translation": "라이선스: {license}"
+  },
+  {
+    "index": 18,
+    "key": "about.components",
+    "original": "Open source projects",
+    "translation": "오픈 소스 프로젝트"
+  },
+  {
+    "index": 19,
+    "key": "prepare.title",
+    "original": "Preparing patches",
+    "translation": "패치 준비 중"
+  },
+  {
+    "index": 20,
+    "key": "prepare.elapsed",
+    "original": "Elapsed: {seconds} s",
+    "translation": "{seconds}초 경과"
+  },
+  {
+    "index": 22,
+    "key": "prepare.working",
+    "original": "Working...",
+    "translation": "처리 중..."
+  },
+  {
+    "index": 23,
+    "key": "prepare.cache_reused",
+    "original": "Cache reused",
+    "translation": "캐시 재사용"
+  },
+  {
+    "index": 24,
+    "key": "patch_error.mismatch.title",
+    "original": "Patch does not match",
+    "translation": "패치가 일치하지 않습니다"
+  },
+  {
+    "index": 25,
+    "key": "patch_error.mismatch.body",
+    "original": "Check the selected patches and their order.",
+    "translation": "선택한 패치와 적용 순서를 확인하세요."
+  },
+  {
+    "index": 26,
+    "key": "menu.launch_original",
+    "original": "Start original",
+    "translation": "원본 게임 실행"
+  },
+  {
+    "index": 27,
+    "key": "menu.environment_report",
+    "original": "Environment report",
+    "translation": "환경 보고서"
+  },
+  {
+    "index": 28,
+    "key": "environment_report.preparing",
+    "original": "Collecting environment report",
+    "translation": "환경 보고서 수집 중"
+  },
+  {
+    "index": 29,
+    "key": "environment_report.saved",
+    "original": "Report saved",
+    "translation": "보고서 저장 완료"
+  },
+  {
+    "index": 30,
+    "key": "patch_list.empty.title",
+    "original": "No patches found",
+    "translation": "패치가 없습니다"
+  },
+  {
+    "index": 31,
+    "key": "patch_list.empty.body",
+    "original": "Put .xzp files in this folder:",
+    "translation": "이 폴더에 .xzp 파일을 넣어 주세요:"
+  },
+  {
+    "index": 32,
+    "key": "game_card.missing.title",
+    "original": "No Game Card found",
+    "translation": "게임 카드가 없습니다"
+  },
+  {
+    "index": 33,
+    "key": "game_card.missing.body",
+    "original": "Insert a Game Card and reopen the app.",
+    "translation": "게임 카드를 넣고 앱을 다시 실행하세요."
+  },
+  {
+    "index": 34,
+    "key": "error.title",
+    "original": "Read failed",
+    "translation": "읽기 실패"
+  },
+  {
+    "index": 35,
+    "key": "error.body",
+    "original": "Operation stopped. Check the error details.",
+    "translation": "작업이 중단되었습니다. 오류 내용을 확인하세요."
+  },
+  {
+    "index": 36,
+    "key": "error.details",
+    "original": "Details",
+    "translation": "상세 정보"
+  },
+  {
+    "index": 37,
+    "key": "error.fatal_body",
+    "original": "Record the error details and reopen the app.",
+    "translation": "오류 내용을 기록하고 앱을 다시 실행하세요."
+  },
+  {
+    "index": 38,
+    "key": "game_card.loading",
+    "original": "Reading Game Card",
+    "translation": "게임 카드 읽는 중"
+  },
+  {
+    "index": 39,
+    "key": "game_card.changed",
+    "original": "Game Card changed. Reopen the app.",
+    "translation": "게임 카드가 바뀌었습니다. 앱을 다시 실행하세요."
+  },
+  {
+    "index": 40,
+    "key": "prepare.stage.read_card_header",
+    "original": "Reading card header",
+    "translation": "카드 헤더 읽는 중"
+  },
+  {
+    "index": 41,
+    "key": "prepare.stage.initialize_card",
+    "original": "Initializing card",
+    "translation": "카드 초기화 중"
+  },
+  {
+    "index": 42,
+    "key": "prepare.stage.read_secure_area",
+    "original": "Reading secure area",
+    "translation": "보안 영역 읽는 중"
+  },
+  {
+    "index": 43,
+    "key": "prepare.stage.check_secure_area",
+    "original": "Checking secure area",
+    "translation": "보안 영역 확인 중"
+  },
+  {
+    "index": 44,
+    "key": "prepare.stage.read_card",
+    "original": "Reading Game Card",
+    "translation": "게임 카드 읽는 중"
+  },
+  {
+    "index": 45,
+    "key": "prepare.stage.read_patch",
+    "original": "Reading patch",
+    "translation": "패치 읽는 중"
+  },
+  {
+    "index": 46,
+    "key": "prepare.stage.find_cache",
+    "original": "Looking for cache",
+    "translation": "캐시 찾는 중"
+  },
+  {
+    "index": 47,
+    "key": "prepare.stage.remove_unfinished",
+    "original": "Removing unfinished files",
+    "translation": "미완료 파일 삭제 중"
+  },
+  {
+    "index": 48,
+    "key": "prepare.stage.read_patch_directory",
+    "original": "Reading patch directory",
+    "translation": "패치 목록 읽는 중"
+  },
+  {
+    "index": 49,
+    "key": "prepare.stage.extract",
+    "original": "Extracting files",
+    "translation": "압축 푸는 중"
+  },
+  {
+    "index": 50,
+    "key": "prepare.stage.preprocess",
+    "original": "Game preprocessing",
+    "translation": "게임 전처리 중"
+  },
+  {
+    "index": 51,
+    "key": "prepare.stage.read_game_directory",
+    "original": "Reading game directory",
+    "translation": "게임 파일 목록 읽는 중"
+  },
+  {
+    "index": 52,
+    "key": "prepare.stage.prepare_files",
+    "original": "Preparing game files",
+    "translation": "게임 파일 준비 중"
+  },
+  {
+    "index": 53,
+    "key": "prepare.stage.arrange_files",
+    "original": "Arranging game files",
+    "translation": "게임 파일 배치 중"
+  },
+  {
+    "index": 54,
+    "key": "prepare.stage.apply_patch",
+    "original": "Applying patch",
+    "translation": "패치 적용 중"
+  },
+  {
+    "index": 55,
+    "key": "prepare.stage.replace_file",
+    "original": "Replacing files",
+    "translation": "파일 교체 중"
+  },
+  {
+    "index": 56,
+    "key": "prepare.stage.write_cache",
+    "original": "Writing cache",
+    "translation": "캐시 기록 중"
+  },
+  {
+    "index": 57,
+    "key": "prepare.stage.remove_temporary",
+    "original": "Removing temporary files",
+    "translation": "임시 파일 삭제 중"
+  },
+  {
+    "index": 58,
+    "key": "prepare.stage.finish_cache",
+    "original": "Finishing cache",
+    "translation": "캐시 마무리 중"
+  },
+  {
+    "index": 59,
+    "key": "prepare.stage.check_cache",
+    "original": "Checking cache",
+    "translation": "캐시 확인 중"
+  },
+  {
+    "index": 60,
+    "key": "prepare.stage.check_game_data",
+    "original": "Checking game data",
+    "translation": "게임 데이터 확인 중"
+  },
+  {
+    "index": 61,
+    "key": "prepare.stage.prepare_dsi",
+    "original": "Preparing DSi files",
+    "translation": "DSi 파일 준비 중"
+  },
+  {
+    "index": 62,
+    "key": "prepare.stage.patch_sequence",
+    "original": "Patch sequence",
+    "translation": "패치 적용 순서"
+  },
+  {
+    "index": 63,
+    "key": "launch.starting",
+    "original": "Starting game",
+    "translation": "게임 시작 중"
+  },
+  {
+    "index": 64,
+    "key": "language_selection.prompt",
+    "original": "Please select a language",
+    "translation": "언어를 선택해 주세요"
+  },
+  {
+    "index": 65,
+    "key": "about.author",
+    "original": "Author: {author}",
+    "translation": "제작자: {author}"
+  },
+  {
+    "index": 66,
+    "key": "about.version",
+    "original": "Version: {version}",
+    "translation": "버전: {version}"
+  },
+  {
+    "index": 67,
+    "key": "common.key_hint",
+    "original": "{key} {action}",
+    "translation": "{key} {action}"
+  },
+  {
+    "index": 68,
+    "key": "common.item_counter",
+    "original": "{current}/{total}",
+    "translation": "{current}/{total}"
+  },
+  {
+    "index": 69,
+    "key": "common.percentage",
+    "original": "{percent}%",
+    "translation": "{percent}%"
+  },
+  {
+    "index": 70,
+    "key": "prepare.file_counter",
+    "original": "File {current}/{total}",
+    "translation": "파일 {current}/{total}"
+  },
+  {
+    "index": 71,
+    "key": "prepare.remaining",
+    "original": "Remaining: ~{seconds} s",
+    "translation": "완료까지 약 {seconds}초"
+  },
+  {
+    "index": 72,
+    "key": "prepare.estimating",
+    "original": "Remaining: estimating...",
+    "translation": "완료까지 남은 시간: 계산 중..."
+  },
+  {
+    "index": 73,
+    "key": "prepare.stage.launch_files",
+    "original": "Preparing launch files",
+    "translation": "실행 파일 준비"
+  }
+]

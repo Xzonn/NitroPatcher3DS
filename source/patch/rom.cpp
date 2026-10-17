@@ -123,6 +123,7 @@ std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package
         progress("Preparing game files", completed, files.size(), false, file.name.c_str());
         require(unique.insert(normalize(file.name)).second, "Duplicate ROM path: " + file.name);
         file.data = package.replace(file.name, file.data);
+        if (!file.data) return nullptr;
         progress("Preparing game files", ++completed, files.size(), false, file.name.c_str());
     }
     auto system = [&](const std::string& name) -> SourcePtr {
