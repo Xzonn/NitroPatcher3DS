@@ -35,6 +35,12 @@ try {
         [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
             $package, "$projectRoot/out/NitroPatcher3DS.cia", "NitroPatcher3DS.cia"
         )
+        [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+            $package, "$projectRoot/docs/usage.md", "使用说明.md"
+        )
+        [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+            $package, "$projectRoot/docs/usage.en.md", "User Guide.md"
+        )
     }
     finally {
         $package.Dispose()
