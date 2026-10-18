@@ -182,8 +182,8 @@
   {
     "index": 31,
     "key": "patch_list.empty.body",
-    "original": "Put .xzp files in this folder:",
-    "translation": "이 폴더에 .xzp 파일을 넣어 주세요:"
+    "original": "Put .xzp, .zip or .xdelta files in this folder:",
+    "translation": "이 폴더에 .xzp, .zip 또는 .xdelta 파일을 넣어 주세요:"
   },
   {
     "index": 32,

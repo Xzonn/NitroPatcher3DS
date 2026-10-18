@@ -48,12 +48,29 @@ static bool hexString(const std::string& value, size_t length) {
     });
 }
 
-static bool complete(const std::string& directory, const std::string& rom, const std::string& patch,
+static std::string cardDigest(SourcePtr card, const std::string& root, const std::string& identity) {
+    std::string path = root + "/config/cards/" + identity + "-" + std::to_string(card->size) + ".json";
+    if (exists(path)) {
+        auto metadata = readJson(path);
+        require(cJSON_IsObject(metadata.get()) && number(metadata.get(), "size", card->size), "Invalid card identity cache");
+        auto md5 = text(metadata.get(), "md5");
+        require(hexString(md5, 32), "Invalid cached ROM digest");
+        return md5;
+    }
+    auto md5 = digest(card, false, "Reading Game Card");
+    auto metadata = object();
+    cJSON_AddStringToObject(metadata.get(), "md5", md5.c_str());
+    cJSON_AddNumberToObject(metadata.get(), "size", card->size);
+    writeJson(path, metadata.get());
+    return md5;
+}
+
+static bool complete(const std::string& directory, const std::string& patch,
     const std::string& identity, uint32_t cardSize) {
     for (const char* name : {"complete", "manifest.json", "map.bin", "data.bin"}) if (!exists(directory + "/" + name)) return false;
     auto metadata = readJson(directory + "/manifest.json");
     if (!cJSON_IsObject(metadata.get()) || !number(metadata.get(), "format", FormatVersion)
-        || !number(metadata.get(), "rules", RulesVersion) || text(metadata.get(), "romMd5") != rom
+        || !number(metadata.get(), "rules", RulesVersion)
         || text(metadata.get(), "patchCrc32") != patch || text(metadata.get(), "cardIdentity") != identity
         || !number(metadata.get(), "cardSize", cardSize)) return false;
     Disk map(directory + "/map.bin"), data(directory + "/data.bin");
@@ -92,6 +109,47 @@ static void updatePatchIndex(const std::string& root, const std::string& rom,
     if (!referenced) removeTree(root + "/cache/" + rom + "/" + previous);
 }
 
+static void writeCache(Map& rom, Map& final) {
+    std::vector<uint8_t> buffer(BufferSize);
+    Cached input(rom.payload);
+    uint32_t filled = 0, first = 0, pending = 0;
+    auto transfer = [&](uint32_t length) {
+        while (length) {
+            uint32_t take = std::min(length, BufferSize - filled);
+            input.read(first, buffer.data() + filled, take);
+            first += take;
+            pending -= take;
+            filled += take;
+            length -= take;
+            if (filled == BufferSize) {
+                final.payload->write(final.payload->size, buffer.data(), filled);
+                filled = 0;
+            }
+        }
+    };
+    progress("Writing cache", 0, rom.size, true);
+    for (uint32_t number = 0; number < rom.count; number++) {
+        Extent item = rom.at(number);
+        if (item.kind != Kind::Patch) final.append(item.kind, item.source, item.length);
+        else {
+            if (pending && item.source != first + pending) transfer(pending);
+            if (!pending) first = item.source;
+            final.append(Kind::Patch, final.payload->size + filled + pending, item.length);
+            pending += item.length;
+            while (pending >= BufferSize - filled) {
+                transfer(BufferSize - filled);
+                progress("Writing cache", item.start + item.length - std::min(pending, item.length), rom.size, true);
+            }
+        }
+        progress("Writing cache", item.start + item.length, rom.size, true);
+    }
+    transfer(pending);
+    if (filled) final.payload->write(final.payload->size, buffer.data(), filled);
+    final.finish();
+    final.payload->sync();
+    final.table->sync();
+}
+
 std::vector<std::string> listPatches(const std::string& root) {
     makeDirectory(root);
     makeDirectory(root + "/patches");
@@ -100,7 +158,8 @@ std::vector<std::string> listPatches(const std::string& root) {
     std::vector<std::string> result;
     while (dirent* entry = readdir(directory)) {
         std::string name = entry->d_name;
-        if (name.size() >= 4 && normalize(name.substr(name.size() - 4)) == ".xzp") result.push_back(root + "/patches/" + name);
+        std::string extension = name.size() >= 4 ? normalize(name.substr(name.size() - 4)) : "";
+        if (extension == ".xzp" || extension == ".zip" || isDeltaPatch(name)) result.push_back(root + "/patches/" + name);
     }
     require(closedir(directory) == 0, "Cannot close patches directory");
     std::sort(result.begin(), result.end());
@@ -109,40 +168,28 @@ std::vector<std::string> listPatches(const std::string& root) {
 
 Prepared prepare(SourcePtr card, const std::string& path, const std::string& root) {
     require(path.compare(0, root.size() + 9, root + "/patches/") == 0 && path.find("/../") == std::string::npos,
-        "Place XZP packages in nitro-patcher/patches");
+        "Place patches in nitro-patcher/patches");
     makeDirectory(root);
     makeDirectory(root + "/cache");
     makeDirectory(root + "/config");
     makeDirectory(root + "/config/cards");
     auto rawHeader = readBytes(card, 0, 512);
     std::string identity = digest(rawHeader.data(), rawHeader.size(), true);
-    std::string cardIndex = root + "/config/cards/" + identity + "-" + std::to_string(card->size) + ".json";
+    std::string cardKey = identity + "-" + std::to_string(card->size);
     std::string romMd5;
-    if (exists(cardIndex)) {
-        auto metadata = readJson(cardIndex);
-        require(cJSON_IsObject(metadata.get()) && number(metadata.get(), "size", card->size), "Invalid card identity cache");
-        romMd5 = text(metadata.get(), "md5");
-        require(hexString(romMd5, 32), "Invalid cached ROM digest");
-    } else {
-        romMd5 = digest(card, false, "Reading Game Card");
-        auto metadata = object();
-        cJSON_AddStringToObject(metadata.get(), "md5", romMd5.c_str());
-        cJSON_AddNumberToObject(metadata.get(), "size", card->size);
-        writeJson(cardIndex, metadata.get());
-    }
     auto patch = std::make_shared<Disk>(path);
     logPreparation("CARD identity=" + identity + " md5=" + romMd5 + " size=" + std::to_string(card->size));
     std::string patchCrc = digest(patch, true, "Reading patch");
     patch.reset();
-    makeDirectory(root + "/cache/" + romMd5);
-    std::string directory = root + "/cache/" + romMd5 + "/" + patchCrc;
+    makeDirectory(root + "/cache/" + cardKey);
+    std::string directory = root + "/cache/" + cardKey + "/" + patchCrc;
     logPreparation("CACHE directory=" + directory + " patchCrc32=" + patchCrc);
     makeDirectory(directory);
     std::string ready = directory + "/ready", pending = directory + "/pending";
     progress("Looking for cache", 0, 0);
-    bool reused = complete(ready, romMd5, patchCrc, identity, card->size);
+    bool reused = complete(ready, patchCrc, identity, card->size);
     logPreparation(std::string("CACHE ready complete=") + (reused ? "true" : "false"));
-    if (!reused && complete(pending, romMd5, patchCrc, identity, card->size)) {
+    if (!reused && complete(pending, patchCrc, identity, card->size)) {
         removeTree(ready);
         logPreparation("CACHE recover begin " + pending);
         require(std::rename(pending.c_str(), ready.c_str()) == 0, "Cannot recover completed cache");
@@ -151,6 +198,7 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
     }
     if (reused) progress("Using prepared cache",0,0);
     if (!reused) {
+        progress("Planning patch preparation", 0, 0);
         progress("Removing unfinished files", 0, 0);
         removeTree(pending);
         makeDirectory(pending);
@@ -159,56 +207,47 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
         bool mismatch = false;
         bool matchesCard = [&]() {
             Workspace work(pending + "/work", card);
-            Package package(path, work);
-            if (package.has("md5.txt")) {
-                auto bytes = package.bytes("md5.txt");
-                std::string content(bytes.begin(), bytes.end());
-                bool matched = false;
-                for (size_t first = 0; first <= content.size();) {
-                    size_t end = content.find('\n', first);
-                    if (end == std::string::npos) end = content.size();
-                    std::string line = content.substr(first, end - first);
-                    size_t begin = line.find_first_not_of(" \t\r\n");
-                    if (begin != std::string::npos && line[begin] != '#') {
-                        line = line.substr(begin, line.find_last_not_of(" \t\r\n") - begin + 1);
-                        require(line.size() == 32, "Invalid md5.txt in XZP");
-                        if (normalize(line) == romMd5) { matched = true; break; }
+            std::shared_ptr<Map> virtualRom;
+            if (isDeltaPatch(path)) virtualRom = applyDelta(work, card, path, path.substr(path.find_last_of('/') + 1));
+            else {
+                Package package(path, work);
+                if (package.needsMd5()) romMd5 = cardDigest(card, root, identity);
+                if (package.has("md5.txt")) {
+                    auto bytes = package.bytes("md5.txt");
+                    std::string content(bytes.begin(), bytes.end());
+                    bool matched = false;
+                    for (size_t first = 0; first <= content.size();) {
+                        size_t end = content.find('\n', first);
+                        if (end == std::string::npos) end = content.size();
+                        std::string line = content.substr(first, end - first);
+                        size_t begin = line.find_first_not_of(" \t\r\n");
+                        if (begin != std::string::npos && line[begin] != '#') {
+                            line = line.substr(begin, line.find_last_not_of(" \t\r\n") - begin + 1);
+                            require(line.size() == 32, "Invalid md5.txt in XZP");
+                            if (normalize(line) == romMd5) { matched = true; break; }
+                        }
+                        if (end == content.size()) break;
+                        first = end + 1;
                     }
-                    if (end == content.size()) break;
-                    first = end + 1;
+                    if (!matched) {error="XZP does not match this Game Card (MD5 mismatch)";mismatch=true;return false;}
+                    logPreparation("MD5 matched " + romMd5);
                 }
-                if (!matched) {error="XZP does not match this Game Card (MD5 mismatch)";mismatch=true;return false;}
-                logPreparation("MD5 matched " + romMd5);
+                if (package.has("metadata.json")) {
+                    auto data = package.bytes("metadata.json");
+                    data.push_back(0);
+                    Json metadata(cJSON_ParseWithLength(reinterpret_cast<const char*>(data.data()), data.size()), cJSON_Delete);
+                    patchId = text(metadata.get(), "id");
+                }
+                SourcePtr original = card;
+                std::string preprocessing = "preprocessing/" + romMd5 + ".xdelta";
+                if (package.has(preprocessing)) original = package.delta(preprocessing, original, "Game preprocessing");
+                if (!original) {error=work.error;return false;}
+                virtualRom = buildRom(work, original, package);
             }
-            if (package.has("metadata.json")) {
-                auto data = package.bytes("metadata.json");
-                data.push_back(0);
-                Json metadata(cJSON_ParseWithLength(reinterpret_cast<const char*>(data.data()), data.size()), cJSON_Delete);
-                patchId = text(metadata.get(), "id");
-            }
-            SourcePtr original = card;
-            std::string preprocessing = "preprocessing/" + romMd5 + ".xdelta";
-            if (package.has(preprocessing)) original = applyDelta(work, original, package.extract(preprocessing), "Game preprocessing");
-            if (!original) {error=work.error;return false;}
-            auto virtualRom = buildRom(work, original, package);
             if (!virtualRom) {error=work.error;return false;}
             auto payload = std::make_shared<Disk>(pending + "/data.bin", "w+b");
             Map final(pending + "/map.bin", payload, card, true);
-            std::vector<uint8_t> buffer(BufferSize);
-            progress("Writing cache", 0, virtualRom->size, true);
-            for (uint32_t number = 0; number < virtualRom->count; number++) {
-                Extent item = virtualRom->at(number);
-                if (item.kind != Kind::Patch) final.append(item.kind, item.source, item.length);
-                else for (uint32_t offset = 0; offset < item.length;) {
-                    uint32_t take = std::min(BufferSize, item.length - offset);
-                    virtualRom->payload->read(item.source + offset, buffer.data(), take);
-                    final.literal(buffer.data(), take);
-                    offset += take;
-                    progress("Writing cache", item.start + offset, virtualRom->size, true);
-                }
-                progress("Writing cache", item.start + item.length, virtualRom->size, true);
-            }
-            final.finish();
+            writeCache(*virtualRom, final);
             auto metadata = object();
             cJSON_AddNumberToObject(metadata.get(), "format", FormatVersion);
             cJSON_AddNumberToObject(metadata.get(), "rules", RulesVersion);
@@ -242,7 +281,7 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
     std::string patchId = text(metadata.get(), "patchId");
     if (patchId.empty()) patchId = normalize(path.substr(path.find_last_of('/') + 1));
     progress("Finishing cache", 0, 0);
-    updatePatchIndex(root, romMd5, patchCrc, patchId);
+    updatePatchIndex(root, cardKey, patchCrc, patchId);
     auto payload = std::make_shared<Disk>(ready + "/data.bin");
     auto rom = std::make_shared<Map>(ready + "/map.bin", payload, card, false);
     require(number(metadata.get(), "romSize", rom->size), "Invalid cached ROM length");
@@ -257,41 +296,30 @@ Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const st
     auto rawHeader = readBytes(card, 0, 512);
     std::string identity = digest(rawHeader.data(), rawHeader.size(), true);
     makeDirectory(root + "/config/cards");
-    std::string cardIndex = root + "/config/cards/" + identity + "-" + std::to_string(card->size) + ".json";
+    std::string cardKey = identity + "-" + std::to_string(card->size);
     std::string romMd5;
-    if (exists(cardIndex)) {
-        auto metadata = readJson(cardIndex);
-        require(cJSON_IsObject(metadata.get()) && number(metadata.get(), "size", card->size), "Invalid card identity cache");
-        romMd5 = text(metadata.get(), "md5");
-        require(hexString(romMd5, 32), "Invalid cached ROM digest");
-    } else {
-        romMd5 = digest(card, false, "Reading Game Card");
-        auto metadata = object();
-        cJSON_AddStringToObject(metadata.get(), "md5", romMd5.c_str());
-        cJSON_AddNumberToObject(metadata.get(), "size", card->size);
-        writeJson(cardIndex, metadata.get());
-    }
     std::string hashes = "np3d-chain-v1\n", names;
     for (const auto& path : paths) {
         require(path.compare(0, root.size() + 9, root + "/patches/") == 0 && path.find("/../") == std::string::npos,
-            "Place XZP packages in nitro-patcher/patches");
+            "Place patches in nitro-patcher/patches");
         hashes += digest(std::make_shared<Disk>(path), true, "Reading patch") + "\n";
         names += path.substr(path.find_last_of('/') + 1) + "\n";
     }
     std::string patchCrc = digest(hashes.data(), hashes.size(), true);
-    makeDirectory(root + "/cache/" + romMd5);
-    std::string directory = root + "/cache/" + romMd5 + "/" + patchCrc;
+    makeDirectory(root + "/cache/" + cardKey);
+    std::string directory = root + "/cache/" + cardKey + "/" + patchCrc;
     makeDirectory(directory);
     std::string ready = directory + "/ready", pending = directory + "/pending";
     progress("Looking for cache",0,0);
-    bool reused = complete(ready, romMd5, patchCrc, identity, card->size);
-    if (!reused && complete(pending, romMd5, patchCrc, identity, card->size)) {
+    bool reused = complete(ready, patchCrc, identity, card->size);
+    if (!reused && complete(pending, patchCrc, identity, card->size)) {
         removeTree(ready);
         require(std::rename(pending.c_str(), ready.c_str()) == 0, "Cannot recover completed cache");
         reused = true;
     }
     if (reused) progress("Using prepared cache",0,0);
     if (!reused) {
+        progress("Planning patch preparation", 0, 0);
         removeTree(pending);
         makeDirectory(pending);
         std::string error;
@@ -301,8 +329,17 @@ Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const st
             SourcePtr input = card;
             for (size_t index = 0; index < paths.size(); index++) {
                 progress("Patch sequence", index + 1, paths.size(), false, paths[index].c_str());
-                std::string inputMd5 = index ? digest(input, false, "Checking game data") : romMd5;
+                if (isDeltaPatch(paths[index])) {
+                    input = applyDelta(work, input, paths[index], paths[index].substr(paths[index].find_last_of('/') + 1));
+                    if (!input) {error=work.error;return false;}
+                    continue;
+                }
                 Package package(paths[index], work);
+                std::string inputMd5;
+                if (package.needsMd5()) {
+                    if (index) inputMd5 = digest(input, false, "Checking game data");
+                    else inputMd5 = romMd5 = cardDigest(card, root, identity);
+                }
                 if (package.has("md5.txt")) {
                     auto bytes = package.bytes("md5.txt");
                     std::string content(bytes.begin(), bytes.end());
@@ -323,7 +360,7 @@ Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const st
                     if (!found) {error="XZP does not match the current input in the selected patch sequence (MD5 mismatch)";mismatch=true;return false;}
                 }
                 std::string preprocessing = "preprocessing/" + inputMd5 + ".xdelta";
-                if (package.has(preprocessing)) input = applyDelta(work, input, package.extract(preprocessing), "Game preprocessing");
+                if (package.has(preprocessing)) input = package.delta(preprocessing, input, "Game preprocessing");
                 if (!input) {error=work.error;return false;}
                 input = buildRom(work, input, package);
                 if (!input) {error=work.error;return false;}
@@ -331,19 +368,7 @@ Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const st
             auto virtualRom = std::static_pointer_cast<Map>(input);
             auto payload = std::make_shared<Disk>(pending + "/data.bin", "w+b");
             Map final(pending + "/map.bin", payload, card, true);
-            std::vector<uint8_t> buffer(BufferSize);
-            for (uint32_t index = 0; index < virtualRom->count; index++) {
-                Extent item = virtualRom->at(index);
-                if (item.kind != Kind::Patch) final.append(item.kind, item.source, item.length);
-                else for (uint32_t offset = 0; offset < item.length;) {
-                    uint32_t take = std::min(BufferSize, item.length - offset);
-                    virtualRom->payload->read(item.source + offset, buffer.data(), take);
-                    final.literal(buffer.data(), take);
-                    offset += take;
-                }
-                progress("Writing cache", item.start + item.length, virtualRom->size, true);
-            }
-            final.finish();
+            writeCache(*virtualRom, final);
             auto metadata = object();
             cJSON_AddNumberToObject(metadata.get(), "format", FormatVersion);
             cJSON_AddNumberToObject(metadata.get(), "rules", RulesVersion);
@@ -366,7 +391,7 @@ Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const st
         removeTree(ready);
         require(std::rename(pending.c_str(), ready.c_str()) == 0, "Cannot publish prepared cache");
     }
-    updatePatchIndex(root, romMd5, patchCrc, "chain:" + names);
+    updatePatchIndex(root, cardKey, patchCrc, "chain:" + names);
     auto metadata = readJson(ready + "/manifest.json");
     auto payload = std::make_shared<Disk>(ready + "/data.bin");
     auto rom = std::make_shared<Map>(ready + "/map.bin", payload, card, false);

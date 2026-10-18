@@ -23,6 +23,7 @@ static ProgressHandler progressHandler;
 static FILE* preparationLog;
 static uint64_t logStarted;
 static uint64_t logUpdated;
+static uint64_t logFlushed;
 static std::string logStage;
 
 #ifdef ARM9
@@ -60,8 +61,11 @@ void logPreparation(const std::string& message) {
     require(std::fprintf(output, "[%lu s] %s\n", static_cast<unsigned long>((preparationMilliseconds() - logStarted) / 1000), message.c_str()) >= 0,
 #endif
         "Cannot write preparation log");
-    require(std::fflush(output) == 0, "Cannot flush preparation log");
-    require(fsync(fileno(output)) == 0, "Cannot sync preparation log");
+    uint64_t now = preparationMilliseconds();
+    if (now - logFlushed >= 5000) {
+        require(std::fflush(output) == 0, "Cannot flush preparation log");
+        logFlushed = now;
+    }
     preparationLog = output;
     errno = savedError;
 }
@@ -81,7 +85,7 @@ void beginPreparationLog(const std::string& root, const std::string& patch) {
     TIMER3_CR = TIMER_ENABLE | TIMER_CASCADE;
     TIMER2_CR = TIMER_ENABLE | TIMER_DIV_1024;
 #endif
-    logStarted = logUpdated = preparationMilliseconds();
+    logStarted = logUpdated = logFlushed = preparationMilliseconds();
     logStage.clear();
     logPreparation("BEGIN patch=" + patch);
 }
@@ -90,7 +94,10 @@ void finishPreparationLog(bool reused, const std::string& error) {
     logPreparation(error.empty() ? (reused ? "SUCCESS cache reused" : "SUCCESS cache prepared") : "ERROR " + error);
     FILE* output = preparationLog;
     preparationLog = nullptr;
-    if (output) require(std::fclose(output) == 0, "Cannot close preparation log");
+    if (output) {
+        require(std::fflush(output) == 0 && fsync(fileno(output)) == 0, "Cannot sync preparation log");
+        require(std::fclose(output) == 0, "Cannot close preparation log");
+    }
 #ifdef ARM9
     TIMER2_CR = 0;
     TIMER3_CR = 0;
@@ -117,6 +124,12 @@ void progress(const char* stage, uint32_t completed, uint32_t total, bool bytes,
 [[noreturn]] void fail(const std::string& message) {
     int error = errno;
     logPreparation("ERROR " + message + " | errno snapshot=" + std::to_string(error) + " (" + std::strerror(error) + ")");
+    if (preparationLog) {
+        FILE* output = preparationLog;
+        preparationLog = nullptr;
+        require(std::fflush(output) == 0 && fsync(fileno(output)) == 0, "Cannot sync preparation error log");
+        preparationLog = output;
+    }
     if (fatalHandler) fatalHandler(message.c_str());
     std::fprintf(stderr, "%s\n", message.c_str());
     std::exit(EXIT_FAILURE);
@@ -127,40 +140,78 @@ void require(bool condition, const std::string& message) {
 }
 
 Disk::Disk(const std::string& name, const char* mode) : path(name) {
-    logPreparation("FILE open begin mode=" + std::string(mode) + " path=" + path);
+    NP3D_PREPARE_LOG("FILE open begin mode=" + std::string(mode) + " path=" + path);
     handle = std::fopen(path.c_str(), mode);
     require(handle, "Cannot open " + path);
     require(std::fseek(handle, 0, SEEK_END) == 0, "Cannot seek " + path);
     long length = std::ftell(handle);
     require(length >= 0 && uint64_t(length) <= 0x40000000, "Invalid file size: " + path);
     size = length;
-    logPreparation("FILE open done size=" + std::to_string(size) + " path=" + path);
+    position = size;
+    NP3D_PREPARE_LOG("FILE open done size=" + std::to_string(size) + " path=" + path);
 }
 
 Disk::~Disk() {
-    logPreparation("FILE close begin " + path);
+    NP3D_PREPARE_LOG("FILE close begin " + path);
     require(std::fclose(handle) == 0, "Cannot close " + path);
-    logPreparation("FILE close done " + path);
+    NP3D_PREPARE_LOG("FILE close done " + path);
 }
 
 void Disk::read(uint32_t offset, void* output, uint32_t length) {
-    require(offset <= size && length <= size - offset, "Read outside " + path);
-    require(std::fseek(handle, offset, SEEK_SET) == 0, "Cannot seek " + path);
-    require(std::fread(output, 1, length, handle) == length, "Cannot read " + path);
+    if (!(offset <= size && length <= size - offset)) fail("Read outside " + path);
+    if ((position != offset || writing) && std::fseek(handle, offset, SEEK_SET) != 0) fail("Cannot seek " + path);
+    if (std::fread(output, 1, length, handle) != length) fail("Cannot read " + path);
+    position = offset + length;
+    reading = true;
+    writing = false;
 }
 
 void Disk::write(uint32_t offset, const void* input, uint32_t length) {
     require(offset <= 0x40000000 && length <= 0x40000000 - offset, "Output exceeds ROM size limit");
-    if (std::ftell(handle) != long(offset)) require(std::fseek(handle, offset, SEEK_SET) == 0, "Cannot seek " + path);
-    require(std::fwrite(input, 1, length, handle) == length, "Cannot write " + path);
+    if ((position != offset || reading) && std::fseek(handle, offset, SEEK_SET) != 0) fail("Cannot seek " + path);
+    if (std::fwrite(input, 1, length, handle) != length) fail("Cannot write " + path);
+    position = offset + length;
+    writing = true;
+    reading = false;
     size = std::max(size, offset + length);
 }
 
 void Disk::sync() {
-    logPreparation("FILE sync begin " + path);
-    require(std::fflush(handle) == 0, "Cannot flush " + path);
+    NP3D_PREPARE_LOG("FILE sync begin " + path);
+    flush();
     require(fsync(fileno(handle)) == 0, "Cannot sync " + path);
-    logPreparation("FILE sync done " + path);
+    NP3D_PREPARE_LOG("FILE sync done " + path);
+}
+
+void Disk::flush() {
+    if (std::fflush(handle) != 0) fail("Cannot flush " + path);
+}
+
+Cached::Cached(SourcePtr source) : input(source) { size = input->size; }
+
+void Cached::read(uint32_t offset, void* output, uint32_t length) {
+    size = input->size;
+    require(offset <= input->size && length <= input->size - offset, "Read outside cached source");
+    auto bytes = static_cast<uint8_t*>(output);
+    while (length) {
+        uint32_t take;
+        if (length >= 512) {
+            take = length / 512 * 512;
+            input->read(offset, bytes, take);
+        } else {
+            uint32_t block = offset / 512, slot = block % blocks.size();
+            if (blocks[slot] != block + 1 || offset % 512 >= lengths[slot]) {
+                lengths[slot] = std::min<uint32_t>(512, input->size - block * 512);
+                input->read(block * 512, buffer.data() + slot * 512, lengths[slot]);
+                blocks[slot] = block + 1;
+            }
+            take = std::min<uint32_t>(length, lengths[slot] - offset % 512);
+            std::memcpy(bytes, buffer.data() + slot * 512 + offset % 512, take);
+        }
+        offset += take;
+        bytes += take;
+        length -= take;
+    }
 }
 
 Slice::Slice(SourcePtr source, uint32_t offset, uint32_t length) : input(source), base(offset) {
@@ -185,47 +236,56 @@ Map::Map(const std::string& path, std::shared_ptr<Disk> data, SourcePtr original
         count = header[4];
         size = header[5];
         require(uint64_t(count) * sizeof(Extent) + 32 == table->size && count > 0, "Incomplete cache mapping");
-        uint32_t end = 0;
-        progress("Checking cache", 0, count);
-        for (uint32_t number = 0; number < count; number++) {
-            Extent item = at(number);
-            require(item.start == end && item.length && item.length <= size - end, "Invalid cache mapping range");
-            uint32_t available = item.kind == Kind::Card ? card->size : payload->size;
-            require(item.kind == Kind::Card || item.kind == Kind::Patch || item.kind == Kind::Fill, "Invalid cache data source");
-            if (item.kind == Kind::Fill) require(item.source <= 255, "Invalid cache fill byte");
-            else require(item.source <= available && item.length <= available - item.source, "Cache source outside file");
-            end += item.length;
-            if (number % 256 == 0) index.push_back(item);
-            last = item;
-            if ((number + 1) % 256 == 0 || number + 1 == count) progress("Checking cache", number + 1, count);
-        }
-        require(end == size, "Incomplete virtual ROM");
+        require(at(0).start == 0, "Incomplete virtual ROM");
+        last = at(count - 1);
+        require(last.start + last.length == size, "Incomplete virtual ROM");
     }
 }
 
-static Map* cachedMap;
-static uint32_t cachedFirst = UINT32_MAX;
-static std::array<Extent, 256> cached;
+struct MappingPage { Map* owner = nullptr; uint32_t first = 0, age = 0; std::array<Extent, 256> entries; };
+static std::array<MappingPage, 16> cached;
+static uint32_t cacheAge;
+static MappingPage* recent;
 
-Map::~Map() { if (cachedMap == this) cachedMap = nullptr; }
+Map::~Map() {
+    for (auto& page : cached) if (page.owner == this) page.owner = nullptr;
+    if (recent && recent->owner == nullptr) recent = nullptr;
+}
 
 Extent Map::at(uint32_t number) {
     require(number < count, "Mapping entry outside table");
-    if (pending && number >= pendingFirst) return (*pending)[number - pendingFirst];
-    uint32_t first = number & ~255u;
-    if (cachedMap != this || cachedFirst != first) {
-        table->read(32 + first * sizeof(Extent), cached.data(), std::min<uint32_t>(256, count - first) * sizeof(Extent));
-        cachedFirst = first;
-        cachedMap = this;
+    Extent item;
+    if (pending && number >= pendingFirst) item = (*pending)[number - pendingFirst];
+    else {
+        uint32_t first = number & ~255u;
+        if (!recent || recent->owner != this || recent->first != first) {
+            MappingPage* oldest = &cached[0];
+            recent = nullptr;
+            for (auto& page : cached) {
+                if (page.owner == this && page.first == first) { recent = &page; break; }
+                if (!page.owner || page.age < oldest->age) oldest = &page;
+            }
+            if (!recent) {
+                recent = oldest;
+                table->read(32 + first * sizeof(Extent), recent->entries.data(), std::min<uint32_t>(256, count - first) * sizeof(Extent));
+                recent->owner = this;
+                recent->first = first;
+            }
+        }
+        recent->age = ++cacheAge;
+        item = recent->entries[number - first];
     }
-    return cached[number - first];
+    require(item.start < size && item.length && item.length <= size - item.start, "Invalid cache mapping range");
+    require(uint32_t(item.kind) <= uint32_t(Kind::Fill), "Invalid cache data source");
+    return item;
 }
 
 void Map::flush() {
     if (pending) {
         table->write(32 + pendingFirst * sizeof(Extent), pending->data(),
             std::min<uint32_t>(256, count - pendingFirst) * sizeof(Extent));
-        if (cachedMap == this) cachedMap = nullptr;
+        for (auto& page : cached) if (page.owner == this) page.owner = nullptr;
+        if (recent && recent->owner == nullptr) recent = nullptr;
     }
 }
 
@@ -305,9 +365,13 @@ void Map::read(uint32_t offset, void* output, uint32_t length) {
     while (length) {
         Extent item = find(offset);
         uint32_t take = std::min(length, item.length - (offset - item.start));
-        if (item.kind == Kind::Fill) std::memset(bytes, item.source, take);
+        if (item.kind == Kind::Fill) {
+            require(item.source <= 255, "Invalid cache fill byte");
+            std::memset(bytes, item.source, take);
+        }
         else {
             SourcePtr input = item.kind == Kind::Card ? card : payload;
+            require(item.source <= input->size && item.length <= input->size - item.source, "Cache source outside file");
             input->read(item.source + offset - item.start, bytes, take);
         }
         bytes += take;
@@ -320,8 +384,8 @@ void Map::finish() {
     flush();
     uint32_t values[] = {count, size};
     table->write(16, values, sizeof(values));
-    table->sync();
-    payload->sync();
+    table->flush();
+    payload->flush();
     pending.reset();
     pendingFirst = UINT32_MAX;
 }
@@ -443,6 +507,10 @@ std::string normalize(std::string value) {
         value = una::cases::to_lowercase_utf8(value);
     }
     return value;
+}
+
+bool isDeltaPatch(const std::string& path) {
+    return path.size() >= 7 && normalize(path.substr(path.size() - 7)) == ".xdelta";
 }
 
 std::string convert(const std::string& input, const char* encoding) {

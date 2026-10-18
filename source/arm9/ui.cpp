@@ -249,7 +249,7 @@ void render() {
     case Page::About:
         heading(tr(Text::About)); text(1,tr(Text::Components),8,34);
         text(1,"nds-bootstrap",8,54);text(1,"TWiLight Menu++",8,70);text(1,"nitro-patcher / md4c / fmt",8,86);
-        paragraph(1,"miniz / cJSON / xdelta / ndstool\nmbed TLS / uni-algo",8,106);backKey();break;
+        paragraph(1,"miniz / cJSON / xdelta / ndstool\nmbed TLS / uni-algo / liblzma",8,106);backKey();break;
     case Page::Progress:
         heading(tr(Text::Preparing));text(1,format(Text::Counter,fmt::arg("current",state.patchNumber),fmt::arg("total",state.selected.size())),8,34);
         if (!state.selected.empty()) scrollText(1,filename(state.selected[std::min<size_t>(state.patchNumber-1,state.selected.size()-1)]),8,52,240,true);

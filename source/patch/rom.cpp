@@ -171,6 +171,8 @@ std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package
     progress("Arranging game files", 0, input->size, true);
     output->copy(input, 0, headerSize);
     std::vector<Allocation> placements(allocations.size());
+    std::vector<RomFile*> byId(allocations.size(), nullptr);
+    for (auto& file : files) if (file.id != 0xffff && !byId[file.id]) byId[file.id] = &file;
     std::memset(placements.data(), 0, placements.size() * sizeof(Allocation));
     auto pad = [&]() { output->append(Kind::Fill, 255, (512 - output->size % 512) % 512); };
     auto write = [&](SourcePtr data, uint32_t id, bool padding) {
@@ -199,9 +201,12 @@ std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package
         for (auto& file : files) if (file.name.compare(0, prefix.size(), prefix) == 0) payloads.push_back(&file);
         std::stable_sort(payloads.begin(), payloads.end(), [](const RomFile* a, const RomFile* b) { return a->id < b->id; });
         require(payloads.size() == table.size(), "Changing overlay file count is unsupported");
+        std::map<uint32_t, OverlayEntry*> entries;
+        for (auto& item : table) entries.emplace(item.file_id, &item);
         for (const auto* file : payloads) {
-            auto item = std::find_if(table.begin(), table.end(), [&](OverlayEntry& entry) { return entry.file_id == file->id; });
-            require(item != table.end(), "Replacement overlay table is missing a file ID");
+            auto found = entries.find(file->id);
+            require(found != entries.end(), "Replacement overlay table is missing a file ID");
+            auto item = found->second;
             uint32_t flags = item->reserved;
             if (((flags >> 24) & 1) || (cpu == 7 && flags > 0)) item->reserved = (flags & 0xff000000) | (file->data->size & 0xffffff);
             overlayIds.insert(file->id);
@@ -244,8 +249,8 @@ std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package
     for (uint32_t index = 0; index < sorted.size(); index++) {
         uint32_t id = sorted[index];
         if (overlayIds.count(id)) continue;
-        auto named = std::find_if(files.begin(), files.end(), [&](const RomFile& file) { return file.id == id; });
-        if (named != files.end()) write(named->data, id, index + 1 < sorted.size());
+        auto named = byId[id];
+        if (named) write(named->data, id, index + 1 < sorted.size());
         else if (allocations[id].end > allocations[id].start) {
             write(std::make_shared<Slice>(input, allocations[id].start, uint32_t(allocations[id].end) - uint32_t(allocations[id].start)), id, index + 1 < sorted.size());
         }

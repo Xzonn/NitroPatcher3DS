@@ -5,6 +5,7 @@
 #include "np3d_base_font_bin.h"
 #include <cstring>
 #include <functional>
+#include <unistd.h>
 
 namespace np3d {
 namespace {
@@ -36,15 +37,40 @@ std::vector<uint8_t> readResource(const char* name) {
 }
 
 void writeResource(const char* name, const std::string& path) {
-    Disk output(path, "wb");
+    auto archive=std::make_unique<mz_zip_archive>();*archive={};
+    require(mz_zip_reader_init_mem(archive.get(),np3d_resources_twl_bin,np3d_resources_twl_bin_size,0),"Cannot open embedded resources");
+    int index=mz_zip_reader_locate_file(archive.get(),name,nullptr,0);
+    mz_zip_archive_file_stat info;
+    require(index>=0 && mz_zip_reader_file_stat(archive.get(),index,&info),"Cannot read embedded resource version");
+    require(mz_zip_reader_end(archive.get()),"Cannot close embedded resources");
+    std::string version=std::to_string(info.m_crc32)+":"+std::to_string(info.m_uncomp_size);
+    std::string marker=path+".version";
+    if (exists(path) && exists(marker) && Disk(path).size==info.m_uncomp_size) {
+        auto stored=std::make_shared<Disk>(marker);
+        if (stored->size==version.size()) {
+            auto bytes=readBytes(stored,0,stored->size);
+            if (std::string(bytes.begin(),bytes.end())==version) {
+                progress("Preparing launch files",0,0,true);
+                return;
+            }
+        }
+    }
     uint32_t offset = 0;
-    uint32_t total=resourceSize(name);
+    uint32_t total=info.m_uncomp_size;
     progress("Preparing launch files",0,total,true);
-    extract(name, [&](const uint8_t* data, size_t size) {
-        output.write(offset, data, size); offset += size;
-        progress("Preparing launch files",offset,total,true);
-    });
-    output.sync();
+    {
+        Disk output(path+".new", "wb");
+        extract(name, [&](const uint8_t* data, size_t size) {
+            output.write(offset, data, size); offset += size;
+            progress("Preparing launch files",offset,total,true);
+        });
+        output.sync();
+    }
+    if (exists(path)) require(unlink(path.c_str())==0,"Cannot replace launch resource");
+    require(std::rename((path+".new").c_str(),path.c_str())==0,"Cannot publish launch resource");
+    { Disk output(marker+".new","wb");output.write(0,version.data(),version.size());output.sync(); }
+    if (exists(marker)) require(unlink(marker.c_str())==0,"Cannot replace launch resource version");
+    require(std::rename((marker+".new").c_str(),marker.c_str())==0,"Cannot publish launch resource version");
 }
 
 uint32_t resourceSize(const char* name) {

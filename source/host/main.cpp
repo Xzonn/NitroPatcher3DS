@@ -4,7 +4,7 @@
 
 int main(int argc, char** argv) {
     using namespace np3d;
-    require(argc == 5, "Usage: np3d-prepare ORIGINAL.nds PATCH.xzp SD_DIRECTORY OUTPUT.nds");
+    require(argc == 5, "Usage: np3d-prepare ORIGINAL.nds PATCH.(xzp|zip|xdelta) SD_DIRECTORY OUTPUT.nds");
     std::string root = std::string(argv[3]) + "/nitro-patcher";
     makeDirectory(argv[3]);
     makeDirectory(root);

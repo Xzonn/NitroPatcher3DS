@@ -182,8 +182,8 @@
   {
     "index": 31,
     "key": "patch_list.empty.body",
-    "original": "Put .xzp files in this folder:",
-    "translation": "將 .xzp 檔案放入以下目錄："
+    "original": "Put .xzp, .zip or .xdelta files in this folder:",
+    "translation": "將 .xzp、.zip 或 .xdelta 檔案放入以下目錄："
   },
   {
     "index": 32,

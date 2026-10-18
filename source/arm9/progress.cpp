@@ -6,14 +6,21 @@
 #include <cstring>
 
 namespace {
-std::string lastStage, lastDetail;
-uint32_t lastCompleted, lastTotal;
 uint64_t started, rendered;
 std::string fileDetail;
 ui::PreparationProgress preparation;
 np3d::PreparationPlan plan;
+np3d::SourcePtr plannedCard;
+std::vector<std::string> plannedPaths;
 
 void showProgress(const char* stage, uint32_t completed, uint32_t total, bool bytes, const char* detail) {
+    if (std::strcmp(stage,"Planning patch preparation")==0 || std::strcmp(stage,"Using prepared cache")==0) {
+        bool reused=std::strcmp(stage,"Using prepared cache")==0;
+        plan.initialize(plannedCard,plannedPaths,np3d::resourceSize("bootstrap.nds"),reused);
+        for (auto& item : plan.patches) plan.set(item.hash,item.hash.size,item.hash.size);
+        plan.nextHash=plan.patches.size();
+        if (!reused) return;
+    }
     uint64_t now = np3d::preparationMilliseconds();
     bool files = std::strcmp(stage,"Preparing game files")==0;
     bool nested = std::strcmp(stage,"Extracting patch file")==0 || std::strcmp(stage,"Applying patch section")==0
@@ -26,24 +33,24 @@ void showProgress(const char* stage, uint32_t completed, uint32_t total, bool by
         if (!nested) {preparation.fileNumber=preparation.fileCount=0;fileDetail.clear();}
     }
     plan.update(stage,completed,total,detail);
-    bool changed = lastStage != stage || lastDetail != detail || lastTotal != total || completed < lastCompleted;
-    if (!changed && now-rendered<100 && (completed!=total || completed==lastCompleted)) return;
+    bool finished=std::strcmp(stage,"Patch cache prepared")==0 || std::strcmp(stage,"Patch cache reused")==0;
+    if (now-rendered<100 && !finished) return;
     auto work=plan.work();
     preparation.completed=work.completed;preparation.total=work.size;
     preparation.remaining=work.remaining(now-started);
     preparation.bytes=bytes;
-    lastStage=stage;lastDetail=detail;lastCompleted=completed;lastTotal=total;rendered=now;
+    rendered=now;
     ui::progress(stage,completed,total,detail,now-started,preparation);
 }
 }
 void beginPatchProgress() {
-    lastStage.clear();lastDetail.clear();lastCompleted=lastTotal=0;
     fileDetail.clear();preparation={};plan={};
+    plannedCard.reset();plannedPaths.clear();
     started=rendered=np3d::preparationMilliseconds();
     ui::preparing();np3d::setProgressHandler(showProgress);
 }
 void planPatchProgress(np3d::SourcePtr card,const std::vector<std::string>& paths) {
-    plan.initialize(card,paths,np3d::resourceSize("bootstrap.nds"));
+    plannedCard=card;plannedPaths=paths;
 }
 void finishPatchProgress(bool reused) {
     np3d::progress(reused?"Patch cache reused":"Patch cache prepared",1,1);

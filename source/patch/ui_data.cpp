@@ -75,6 +75,7 @@ std::string entry(mz_zip_archive& archive, const char* name) {
 }
 
 PatchInfo inspectPatch(const std::string& path) {
+    if (isDeltaPatch(path)) return {};
     auto archive = std::make_unique<mz_zip_archive>();
     *archive = {};
     require(mz_zip_reader_init_file(archive.get(), path.c_str(), 0), "Cannot open XZP archive");

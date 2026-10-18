@@ -15,7 +15,7 @@ static std::set<unsigned int> directories;
 void ndsRequire(bool condition, const char* message) { np3d::require(condition, message); }
 
 void ndsDirectoryCheck(const char* prefix, unsigned int id) {
-    np3d::logPreparation("NDS directory id=" + std::to_string(id) + " path=" + prefix);
+    NP3D_PREPARE_LOG("NDS directory id=" + std::to_string(id) + " path=" + prefix);
     np3d::require(id >= 0xf000 && id <= 0xffff && directories.insert(id).second,
         "Invalid NDS directory tree or cycle");
     np3d::require(std::count(prefix, prefix + std::strlen(prefix), '/') <= 257, "NDS directory nesting exceeds limit");
@@ -29,10 +29,12 @@ struct Cookie {
 };
 
 static std::vector<NamedFile>* files;
+static std::vector<bool> visitedFiles;
 
 static void visit(const char* prefix, const char* name, unsigned int id, unsigned int offset, unsigned int length) {
     require(id < uint32_t(header.fat_size) / 8, "NDS file ID outside FAT");
-    require(std::none_of(files->begin(), files->end(), [&](const NamedFile& file) { return file.id == id; }), "Duplicate NDS file ID");
+    require(!visitedFiles[id], "Duplicate NDS file ID");
+    visitedFiles[id] = true;
     std::string path = std::string(prefix) + name;
     if (std::any_of(path.begin(), path.end(), [](unsigned char byte) { return byte >= 128; })) path = convert(path, "CP932");
     files->push_back({"data" + path, id, offset, length});
@@ -80,6 +82,7 @@ std::vector<NamedFile> enumerateFiles(SourcePtr source, const Header& value) {
     require(fNDS, "Cannot open NDS directory reader");
     header = value;
     directories.clear();
+    visitedFiles.assign(uint32_t(header.fat_size) / 8, false);
     std::vector<NamedFile> result;
     files = &result;
     ndsFileVisitor = visit;

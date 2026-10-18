@@ -7,15 +7,17 @@ namespace np3d {
 
 struct Package {
     mz_zip_archive archive = {};
+#if NP3D_PREPARE_TRACE
     mz_file_read_func reader = nullptr;
     void* readOpaque = nullptr;
+#endif
     std::map<std::string, unsigned int> entries;
     Workspace& work;
-    unsigned int next = 0;
     Package(const std::string& path, Workspace& work);
     ~Package();
     bool has(const std::string& name) const;
-    std::string extract(const std::string& name);
+    bool needsMd5() const;
+    SourcePtr delta(const std::string& name, SourcePtr source, const std::string& label);
     std::vector<uint8_t> bytes(const std::string& name);
     SourcePtr replace(const std::string& name, SourcePtr source);
 };

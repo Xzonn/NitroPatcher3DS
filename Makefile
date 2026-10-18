@@ -2,6 +2,7 @@
 
 export DIAGNOSTIC ?= 0
 export LAUNCH_TRACE ?= 0
+export PREPARE_TRACE ?= 0
 export NP3D_VERSION := $(shell git describe --always --dirty)
 
 all: launcher bootstrap
@@ -32,6 +33,7 @@ launcher: patch-arm9 bootstrap
 	cp vendor/md4c/LICENSE.md out/licenses/md4c.txt
 	cp vendor/fmt/LICENSE out/licenses/fmt.txt
 	cp assets/fonts/Gulim-OFL.txt assets/fonts/Gulim-AUTHORS.txt out/licenses/
+	cp /opt/np3d/liblzma/COPYING out/licenses/liblzma.txt
 
 bootstrap: build/lzss
 	printf '%s\n' "$(LAUNCH_TRACE)" > build/bootstrap-mode.next
