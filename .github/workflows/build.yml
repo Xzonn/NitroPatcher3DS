@@ -24,9 +24,16 @@ jobs:
         shell: pwsh
         run: ./build.ps1
 
-      - name: Upload installation package
+      - name: Upload 3DS package
         uses: actions/upload-artifact@v7
         with:
           path: out/NitroPatcher3DS.zip
+          archive: false
+          if-no-files-found: error
+
+      - name: Upload DSi package
+        uses: actions/upload-artifact@v7
+        with:
+          path: out/NitroPatcherDSi.zip
           archive: false
           if-no-files-found: error

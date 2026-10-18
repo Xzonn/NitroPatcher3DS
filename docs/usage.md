@@ -1,8 +1,10 @@
 # NitroPatcher3DS 使用说明
 
-NitroPatcher3DS 可以在 3DS／2DS 上为 NDS 游戏卡带应用汉化等补丁。游戏运行时从卡带和 SD 卡读取内容，存档直接读写原卡带。
+NitroPatcher3DS 可以在 3DS／2DS 和 DSi／DSi LL（XL）上为 NDS 游戏卡带应用汉化等补丁。游戏运行时从卡带和 SD 卡读取内容，存档直接读写原卡带。
 
 ## 安装
+
+### 3DS／2DS
 
 需要一台已安装 Luma3DS 和 FBI 的 3DS／2DS，以及与补丁对应的 NDS 游戏卡带。
 
@@ -10,6 +12,21 @@ NitroPatcher3DS 可以在 3DS／2DS 上为 NDS 游戏卡带应用汉化等补丁
 2. 将补丁文件放入 SD 卡的 `nitro-patcher/patches/` 文件夹。文件夹中的 `Place patches here` 是空白提示文件。
 3. 把 SD 卡装回主机，使用 FBI 安装 `NitroPatcher3DS.cia`。
 4. 插入游戏卡带，从 HOME 菜单打开 NitroPatcher3DS。
+
+### DSi／DSi LL（XL）
+
+需要一台已安装 Unlaunch 的 DSi，以及与补丁对应的 NDS 游戏卡带。Unlaunch 的安装方法见 [DSi Guide](https://dsi.cfw.guide/installing-unlaunch.html)。
+
+1. 解压 `NitroPatcherDSi.zip`，将其中的 `nitro-patcher` 文件夹复制到主机 SD 卡根目录。
+2. 将补丁文件放入 `nitro-patcher/patches/` 文件夹。
+3. 把 SD 卡装回主机，插入游戏卡带，按住 A＋B 开机进入 Unlaunch 文件菜单。
+4. 选择 NitroPatcher3DS，确认下屏幕显示的路径为 `sdmc:/nitro-patcher/app/NitroPatcher3DS.nds`，按 A 启动。
+
+需要设置快捷启动时，在 Unlaunch 的 `OPTIONS` 中将一个 `BUTTON A / B / X / Y` 选项指定为该程序，再选择 `SAVE & EXIT` 保存。以后按住对应按键开机即可打开程序。
+
+请通过 Unlaunch 直接启动，保留 DSi 模式、主机 SD 卡和卡带接口的访问权限。补丁和程序都放在主机 SD 卡中，游戏卡带留在卡槽内。
+
+### 补丁目录
 
 补丁需要直接放在 `patches` 文件夹内，程序只读取这一层的补丁文件。
 
@@ -85,3 +102,5 @@ XZP 补丁包可以直接使用，无需解压。ZIP 补丁包需要符合 XZP �
 如果提示补丁不匹配，按 A 查看详情，再按 B 返回检查补丁、卡带版本及多个补丁的顺序。
 
 准备或启动失败时，记录错误详情。反馈问题时，请附上软件版本、游戏名称与版本、补丁名称和应用顺序，以及 SD 卡上的 `nitro-patcher/logs/prepare.log`。也可以从菜单生成环境报告，报告保存在 `nitro-patcher/logs/environment.log`。
+
+DSi 如果提示硬件访问权限被锁定，请按住 A＋B 重新开机，从 Unlaunch 文件菜单直接启动 `nitro-patcher/app/NitroPatcher3DS.nds`。

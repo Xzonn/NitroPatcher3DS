@@ -36,26 +36,34 @@ try {
         throw "CIA packaging failed with exit code $LASTEXITCODE."
     }
     Add-Type -AssemblyName System.IO.Compression.FileSystem
-    $package = [IO.Compression.ZipArchive]::new(
-        [IO.File]::Create("$projectRoot/out/NitroPatcher3DS.zip"),
-        [IO.Compression.ZipArchiveMode]::Create
-    )
-    try {
-        [void]$package.CreateEntry("nitro-patcher/")
-        [void]$package.CreateEntry("nitro-patcher/patches/")
-        [void]$package.CreateEntry("nitro-patcher/patches/Place patches here")
-        [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
-            $package, "$projectRoot/out/NitroPatcher3DS.cia", "NitroPatcher3DS.cia"
+    foreach ($target in @(
+        @{ Package = "NitroPatcher3DS.zip"; Source = "NitroPatcher3DS.cia"; Entry = "NitroPatcher3DS.cia" },
+        @{ Package = "NitroPatcherDSi.zip"; Source = "NitroPatcher3DS.nds"; Entry = "nitro-patcher/app/NitroPatcher3DS.nds" }
+    )) {
+        $package = [IO.Compression.ZipArchive]::new(
+            [IO.File]::Create("$projectRoot/out/$($target.Package)"),
+            [IO.Compression.ZipArchiveMode]::Create
         )
-        [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
-            $package, "$projectRoot/docs/usage.md", "使用说明.md"
-        )
-        [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
-            $package, "$projectRoot/docs/usage.en.md", "User Guide.md"
-        )
-    }
-    finally {
-        $package.Dispose()
+        try {
+            [void]$package.CreateEntry("nitro-patcher/")
+            [void]$package.CreateEntry("nitro-patcher/patches/")
+            [void]$package.CreateEntry("nitro-patcher/patches/Place patches here")
+            if ($target.Source.EndsWith(".nds")) {
+                [void]$package.CreateEntry("nitro-patcher/app/")
+            }
+            [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+                $package, "$projectRoot/out/$($target.Source)", $target.Entry
+            )
+            [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+                $package, "$projectRoot/docs/usage.md", "使用说明.md"
+            )
+            [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+                $package, "$projectRoot/docs/usage.en.md", "User Guide.md"
+            )
+        }
+        finally {
+            $package.Dispose()
+        }
     }
 }
 finally {

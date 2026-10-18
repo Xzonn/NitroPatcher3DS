@@ -1,8 +1,10 @@
 # NitroPatcher3DS User Guide
 
-NitroPatcher3DS applies translation patches and other modifications to NDS game cartridges on a 3DS or 2DS. Games read data from both the cartridge and the SD card, and save directly to the original cartridge.
+NitroPatcher3DS applies translation patches and other modifications to NDS game cartridges on a 3DS, 2DS, DSi or DSi XL (LL). Games read data from both the cartridge and the SD card, and save directly to the original cartridge.
 
 ## Installation
+
+### 3DS / 2DS
 
 You need a 3DS or 2DS with Luma3DS and FBI installed, and an NDS game cartridge compatible with your patch.
 
@@ -10,6 +12,21 @@ You need a 3DS or 2DS with Luma3DS and FBI installed, and an NDS game cartridge 
 2. Put your patch files in `nitro-patcher/patches/` on the SD card. The empty file named `Place patches here` marks this folder.
 3. Put the SD card back in your console and install `NitroPatcher3DS.cia` using FBI.
 4. Insert your game cartridge and open NitroPatcher3DS from the HOME Menu.
+
+### DSi / DSi XL (LL)
+
+You need a DSi with Unlaunch installed, and an NDS game cartridge compatible with your patch. See [DSi Guide](https://dsi.cfw.guide/installing-unlaunch.html) for Unlaunch installation instructions.
+
+1. Extract `NitroPatcherDSi.zip` and copy the `nitro-patcher` folder to the root of the console's SD card.
+2. Put your patch files in `nitro-patcher/patches/`.
+3. Put the SD card back in your console, insert the game cartridge, and turn on the console while holding A + B to open Unlaunch's Filemenu.
+4. Select NitroPatcher3DS, check that the bottom screen shows `sdmc:/nitro-patcher/app/NitroPatcher3DS.nds`, and press A to launch it.
+
+To assign a startup shortcut, open Unlaunch's `OPTIONS`, assign the app to one of the `BUTTON A / B / X / Y` options, then choose `SAVE & EXIT`. Hold that button while turning on the console to open the app.
+
+Launch the app directly from Unlaunch to retain DSi mode and access to the console's SD card and cartridge interface. Keep the app and patches on the console's SD card, with the game cartridge in Slot-1.
+
+### Patch folder
 
 Put patches directly in the `patches` folder. The app only lists patch files at this level.
 
@@ -85,3 +102,5 @@ If no patches appear, check that the files are directly inside `nitro-patcher/pa
 If you see a patch mismatch message, press A to view the details, then press B to go back and check your patches, cartridge revision and patch order.
 
 If preparation or launch fails, record the error details. When reporting a problem, include the app version, game title and revision, patch names and order, and `nitro-patcher/logs/prepare.log` from the SD card. You can also generate an environment report from the menu; it is saved to `nitro-patcher/logs/environment.log`.
+
+If the DSi reports that hardware access is locked, turn it on while holding A + B and launch `nitro-patcher/app/NitroPatcher3DS.nds` directly from Unlaunch's Filemenu.

@@ -63,8 +63,14 @@ int main() {
     np3d::setFatalHandler(stopWithMessage);
     fifoSendValue32(FIFO_PM,PM_REQ_SLEEP_DISABLE);
     consoleDemoInit();
-    if (!isDSiMode()) stopWithMessage("Launch in DSi mode on a 3DS.");
+    if (!isDSiMode()) stopWithMessage("Launch in DSi mode on a DSi or 3DS.");
     ui::showStartup();
+    fifoWaitValue32(FIFO_USER_05);
+    int consoleModel=fifoGetValue32(FIFO_USER_05);
+    fifoWaitValue32(FIFO_USER_06);
+    uint32_t arm7Scfg=fifoGetValue32(FIFO_USER_06);
+    np3d::require(consoleModel!=0 || arm7Scfg!=0,
+        "DSi hardware access is locked. Start this app directly from Unlaunch.");
     if (!fatInitDefault()) stopWithMessage("Unable to access the SD card.");
     np3d::makeDirectory("sd:/nitro-patcher");
     ui::initialize();
@@ -118,7 +124,7 @@ int main() {
                 planPatchProgress(card,paths);
                 auto prepared=np3d::prepare(card,paths,"sd:/nitro-patcher");
                 error=prepared.error;reused=prepared.reused;mismatch=prepared.mismatch;
-                if (error.empty()) {writePatchedLaunch(prepared,card,chipId);finishPatchProgress(reused);}
+                if (error.empty()) {writePatchedLaunch(prepared,card,chipId,consoleModel);finishPatchProgress(reused);}
                 else np3d::setProgressHandler(nullptr);
             }
             np3d::finishPreparationLog(reused,error);
