@@ -24,3 +24,5 @@ RUN tar -xzf /tmp/xz.tar.gz -C /tmp && \
         --disable-scripts --disable-doc --disable-nls && \
     make -C src/liblzma && make -C src/liblzma install && \
     install -D -m 644 COPYING.0BSD /opt/np3d/liblzma/COPYING
+
+RUN git config --system --add safe.directory '*'

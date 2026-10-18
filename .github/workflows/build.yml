@@ -1,0 +1,32 @@
+name: Build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source and submodules
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Build and package
+        shell: pwsh
+        run: ./build.ps1
+
+      - name: Upload installation package
+        uses: actions/upload-artifact@v7
+        with:
+          path: out/NitroPatcher3DS.zip
+          archive: false
+          if-no-files-found: error

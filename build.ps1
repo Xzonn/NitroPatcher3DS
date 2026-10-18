@@ -19,7 +19,15 @@ try {
         throw "Build failed with exit code $LASTEXITCODE."
     }
 
-    & ./vendor/TWiLightMenu/booter/make_cia.exe --srl=out/NitroPatcher3DS.nds --micro=1
+    $ciaTool = "./vendor/TWiLightMenu/booter/make_cia.exe"
+    if ($IsLinux) {
+        $ciaTool = "./vendor/TWiLightMenu/booter/make_cia"
+        chmod +x $ciaTool
+        if ($LASTEXITCODE -ne 0) {
+            throw "CIA tool setup failed with exit code $LASTEXITCODE."
+        }
+    }
+    & $ciaTool --srl=out/NitroPatcher3DS.nds --micro=1
     if ($LASTEXITCODE -ne 0) {
         throw "CIA packaging failed with exit code $LASTEXITCODE."
     }
