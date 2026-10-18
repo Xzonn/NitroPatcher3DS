@@ -194,8 +194,8 @@
   {
     "index": 33,
     "key": "game_card.missing.body",
-    "original": "Insert a Game Card and reopen the app.",
-    "translation": "插入遊戲卡匣後重新開啟程式。"
+    "original": "Check that the Game Card is inserted, then press A to retry.",
+    "translation": "請確認卡匣已插好，再按 A 重試。"
   },
   {
     "index": 34,
@@ -442,5 +442,35 @@
     "key": "about.licenses",
     "original": "Licenses",
     "translation": "授權條款"
+  },
+  {
+    "index": 75,
+    "key": "game_card.insert.title",
+    "original": "Insert a Game Card",
+    "translation": "請插入卡匣"
+  },
+  {
+    "index": 76,
+    "key": "game_card.insert.body",
+    "original": "Insert a Game Card, then press A to read it.",
+    "translation": "插入遊戲卡匣後，按 A 識別。"
+  },
+  {
+    "index": 77,
+    "key": "game_card.reinsert.body",
+    "original": "Remove and reinsert the Game Card, then press A to read it.",
+    "translation": "請拔出卡匣後重新插入，再按 A 識別。"
+  },
+  {
+    "index": 78,
+    "key": "game_card.read",
+    "original": "Read Game Card",
+    "translation": "識別卡匣"
+  },
+  {
+    "index": 79,
+    "key": "menu.change_card",
+    "original": "Read another Game Card",
+    "translation": "重新識別卡匣"
   }
 ]

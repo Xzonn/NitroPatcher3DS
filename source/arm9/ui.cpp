@@ -13,7 +13,10 @@ constexpr const char* Root = "sd:/nitro-patcher";
 constexpr uint16_t White = 0xffff, Black = 0x8000, Gray = 0xe739;
 constexpr int Visible = 6;
 enum class Page { Home, Language, Menu, PatchInfo, About, Licenses, LicenseText, Progress, Report, Empty, NoCard, Error, Details, Loading };
-enum class Command { Toggle, Start, Menu, Info, Back, Language, Original, Report, About, Licenses, ReadLicense, PickLanguage, Previous, Next, Up, Down, Details };
+enum class Command { Toggle, Start, Menu, Info, Back, Language, Original, Report, About, Licenses, ReadLicense, PickLanguage, Previous, Next, Up, Down, Details, ReadCard, ChangeCard };
+constexpr Text MenuLabels[] = {Text::Original,Text::ChangeCard,Text::Report,Text::Language,Text::About};
+constexpr Command MenuCommands[] = {Command::Original,Command::ChangeCard,Command::Report,Command::Language,Command::About};
+constexpr int MenuCount = sizeof(MenuCommands)/sizeof(MenuCommands[0]);
 constexpr const char* Licenses[] = {"NitroPatcher3DS.txt", "md4c.txt", "fmt.txt", "Gulim-OFL.txt", "Gulim-AUTHORS.txt", "liblzma.txt"};
 constexpr int LicenseCount = sizeof(Licenses)/sizeof(Licenses[0]);
 struct Hit { int x, y, width, height; Command command; int argument; };
@@ -22,6 +25,7 @@ struct State {
     int focus = 0, top = 0, languageBefore = 0, homeFocus = 0, homeTop = 0, textTop = 0, licenseFocus = 0;
     unsigned int ticks = 0, focusTick = 0;
     bool first = false, hasCard = false, fatal = false, mismatch = false, reportWorking = false;
+    bool cardMissing = false, cardReinsert = false;
     int patchNumber = 1;
     uint32_t completed = 0, total = 0;
     uint64_t elapsed = 0;
@@ -50,8 +54,13 @@ void useLanguage(int index) {
     for (const auto& item : fonts) if (languageCodes[index]==item.language) path=item.resource;
     if (fontPath!=path) {
         font.reset();
+#if NP3D_SLOT2
+        std::string embedded=std::string("boot:/")+path;
+        font=std::make_unique<FontGraphic>(std::fopen(embedded.c_str(),"rb"));
+#else
         auto data=np3d::readResource(path);
         font=std::make_unique<FontGraphic>(data);
+#endif
         fontPath=path;
     }
     setLanguage(index);
@@ -228,12 +237,10 @@ void render() {
         break;
     case Page::Menu: {
         heading(tr(Text::Menu));
-        const Text labels[]={Text::Original,Text::Report,Text::Language,Text::About};
-        const Command commands[]={Command::Original,Command::Report,Command::Language,Command::About};
-        for (int index=0;index<4;index++) {
+        for (int index=0;index<MenuCount;index++) {
             int y=32+index*20;
             if (state.focus==index) fill(1,8,y,240,20,Gray);
-            text(1,tr(labels[index]),16,y+4); hits.push_back({8,y,240,20,commands[index],0});
+            text(1,tr(MenuLabels[index]),16,y+4); hits.push_back({8,y,240,20,MenuCommands[index],0});
         }
         backKey(); break;
     }
@@ -292,8 +299,12 @@ void render() {
         softkey(hint("A",Text::Original),8,161,240,Command::Original);
         softkey(hint("X",Text::Menu),8,178,132,Command::Menu); break;
     case Page::NoCard:
-        heading(tr(Text::NoCard)); paragraph(1,tr(Text::NoCardBody),8,40); separator();
-        softkey(hint("X",Text::Menu),8,161,132,Command::Menu); break;
+        heading(tr(state.cardMissing?Text::NoCard:Text::InsertCard));
+        paragraph(1,tr(state.cardReinsert?Text::ReinsertCardPrompt:Text::ReadCardPrompt),8,40);
+        if (state.cardMissing) paragraph(1,tr(Text::NoCardBody),8,96);
+        separator();
+        softkey(hint("A",Text::IdentifyCard),8,161,132,Command::ReadCard);
+        softkey(hint("X",Text::Menu),8,178,132,Command::Menu); break;
     case Page::Error:
         heading(tr(state.mismatch?Text::Mismatch:Text::Error));
         paragraph(1,tr(state.fatal?Text::FatalBody:state.mismatch?Text::MismatchBody:Text::ErrorBody),8,40);
@@ -307,7 +318,7 @@ void returnHome() { go(!state.hasCard?Page::NoCard:state.patches.empty()?Page::E
 void scrollLines(int distance) { state.textTop=std::clamp(state.textTop+distance,0,std::max(0,int(state.lines.size())-7)); }
 void move(int distance,bool page=false) {
     if (state.page==Page::PatchInfo || state.page==Page::Details || state.page==Page::LicenseText) {scrollLines(distance*(page?7:1));return;}
-    int count=state.page==Page::Language?LanguageCount:state.page==Page::Menu?4:state.page==Page::Licenses?LicenseCount:state.page==Page::Home?state.patches.size():0;
+    int count=state.page==Page::Language?LanguageCount:state.page==Page::Menu?MenuCount:state.page==Page::Licenses?LicenseCount:state.page==Page::Home?state.patches.size():0;
     if (!count) return;
     state.focus=page?std::clamp(state.focus+distance*Visible,0,count-1):(state.focus+distance+count)%count;
     if (page) state.top=std::clamp(state.top+distance*Visible,0,std::max(0,count-Visible));
@@ -328,6 +339,8 @@ void command(Command value,int argument=0) {
     case Command::Start: pending=Action::Launch; break;
     case Command::Original: if (state.hasCard) pending=Action::Original; break;
     case Command::Report: pending=Action::Report; break;
+    case Command::ReadCard: pending=Action::ReadCard; break;
+    case Command::ChangeCard: pending=Action::ChangeCard; break;
     case Command::Menu: go(Page::Menu); break;
     case Command::About: go(Page::About); break;
     case Command::Licenses: go(Page::Licenses); break;
@@ -355,7 +368,7 @@ void command(Command value,int argument=0) {
         else if (state.page==Page::Details) go(Page::Error);
         else if (state.page==Page::LicenseText) {state.lines.clear();go(Page::Licenses);state.focus=state.licenseFocus;state.top=std::max(0,state.focus-Visible+1);}
         else if (state.page==Page::Licenses) go(Page::About);
-        else if (state.page==Page::About) {go(Page::Menu);state.focus=3;}
+        else if (state.page==Page::About) {go(Page::Menu);state.focus=MenuCount-1;}
         else returnHome();
         break;
     case Command::Previous: move(-1,true);break;
@@ -399,6 +412,7 @@ void chooseInitialLanguage() {
 }
 void setGame(np3d::SourcePtr card,const sNDSHeader& header) {
     state.hasCard=true;
+    state.hasBanner=false;
     char identity[32];std::snprintf(identity,sizeof(identity),"%.4s-%04x-%02x",header.gameCode,header.headerCRC16,header.romversion);
     state.gameKey=identity;
     state.selected.clear();
@@ -413,7 +427,10 @@ void setGame(np3d::SourcePtr card,const sNDSHeader& header) {
     }
     returnHome();render();
 }
-void noCard() { state.hasCard=false;go(Page::NoCard);render(); }
+void noCard(bool missing,bool reinsert) {
+    state.hasCard=false;state.hasBanner=false;state.gameKey.clear();state.selected.clear();state.info={};
+    state.cardMissing=missing;state.cardReinsert=reinsert;go(Page::NoCard);render();
+}
 Action update() {
     state.ticks++;scanKeys();unsigned int down=keysDown(),repeat=keysDownRepeat();
     pending=Action::None;bool changed=false;
@@ -429,8 +446,9 @@ Action update() {
         if (state.page==Page::Home) command(Command::Toggle,state.focus);
         else if (state.page==Page::Language) command(Command::PickLanguage,state.focus);
         else if (state.page==Page::Menu) {
-            const Command values[]={Command::Original,Command::Report,Command::Language,Command::About};command(values[state.focus]);
+            command(MenuCommands[state.focus]);
         } else if (state.page==Page::Empty) command(Command::Original);
+        else if (state.page==Page::NoCard) command(Command::ReadCard);
         else if (state.page==Page::About) command(Command::Licenses);
         else if (state.page==Page::Licenses) command(Command::ReadLicense,state.focus);
         else if (state.page==Page::Error) command(Command::Details);

@@ -194,8 +194,8 @@
   {
     "index": 33,
     "key": "game_card.missing.body",
-    "original": "Insert a Game Card and reopen the app.",
-    "translation": "ゲームカードを入れてアプリを起動し直してください。"
+    "original": "Check that the Game Card is inserted, then press A to retry.",
+    "translation": "カードが差し込まれていることを確認し、Aで再試行してください。"
   },
   {
     "index": 34,
@@ -442,5 +442,35 @@
     "key": "about.licenses",
     "original": "Licenses",
     "translation": "ライセンス"
+  },
+  {
+    "index": 75,
+    "key": "game_card.insert.title",
+    "original": "Insert a Game Card",
+    "translation": "カードを差し込んでください"
+  },
+  {
+    "index": 76,
+    "key": "game_card.insert.body",
+    "original": "Insert a Game Card, then press A to read it.",
+    "translation": "ゲームカードを差し込み、Aで読み込んでください。"
+  },
+  {
+    "index": 77,
+    "key": "game_card.reinsert.body",
+    "original": "Remove and reinsert the Game Card, then press A to read it.",
+    "translation": "ゲームカードを抜いて差し直し、Aで読み込んでください。"
+  },
+  {
+    "index": 78,
+    "key": "game_card.read",
+    "original": "Read Game Card",
+    "translation": "カード読み込み"
+  },
+  {
+    "index": 79,
+    "key": "menu.change_card",
+    "original": "Read another Game Card",
+    "translation": "カードを読み直す"
   }
 ]

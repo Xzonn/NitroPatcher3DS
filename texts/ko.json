@@ -194,8 +194,8 @@
   {
     "index": 33,
     "key": "game_card.missing.body",
-    "original": "Insert a Game Card and reopen the app.",
-    "translation": "게임 카드를 넣고 앱을 다시 실행하세요."
+    "original": "Check that the Game Card is inserted, then press A to retry.",
+    "translation": "게임 카드가 꽂혀 있는지 확인한 후 A를 눌러 다시 시도하세요."
   },
   {
     "index": 34,
@@ -442,5 +442,35 @@
     "key": "about.licenses",
     "original": "Licenses",
     "translation": "라이선스"
+  },
+  {
+    "index": 75,
+    "key": "game_card.insert.title",
+    "original": "Insert a Game Card",
+    "translation": "게임 카드를 넣어 주세요"
+  },
+  {
+    "index": 76,
+    "key": "game_card.insert.body",
+    "original": "Insert a Game Card, then press A to read it.",
+    "translation": "게임 카드를 넣고 A를 눌러 읽어 주세요."
+  },
+  {
+    "index": 77,
+    "key": "game_card.reinsert.body",
+    "original": "Remove and reinsert the Game Card, then press A to read it.",
+    "translation": "게임 카드를 뺐다가 다시 넣고 A를 눌러 읽어 주세요."
+  },
+  {
+    "index": 78,
+    "key": "game_card.read",
+    "original": "Read Game Card",
+    "translation": "카드 읽기"
+  },
+  {
+    "index": 79,
+    "key": "menu.change_card",
+    "original": "Read another Game Card",
+    "translation": "카드 다시 읽기"
   }
 ]

@@ -1,21 +1,30 @@
 #include "resources.h"
 #include "../patch/core.h"
 #include "miniz.h"
+#if !NP3D_SLOT2
 #include "np3d_resources_twl_bin.h"
 #include "np3d_base_font_bin.h"
+#endif
 #include <cstring>
 #include <functional>
 #include <unistd.h>
 
 namespace np3d {
 namespace {
+void openArchive(mz_zip_archive* archive, const char* name) {
+#if NP3D_SLOT2
+    (void)name;
+    require(mz_zip_reader_init_file(archive, "boot:/resources.zip", 0), "Cannot open embedded resources");
+#else
+    bool baseFont=std::strcmp(name,"fonts/song12.nftr")==0;
+    require(mz_zip_reader_init_mem(archive, baseFont?np3d_base_font_bin:np3d_resources_twl_bin,
+        baseFont?np3d_base_font_bin_size:np3d_resources_twl_bin_size, 0), "Cannot open embedded resources");
+#endif
+}
 void extract(const char* name, const std::function<void(const uint8_t*, size_t)>& consume) {
     auto archive = std::make_unique<mz_zip_archive>();
     *archive = {};
-    bool baseFont=std::strcmp(name,"fonts/song12.nftr")==0;
-    require(mz_zip_reader_init_mem(archive.get(), baseFont?np3d_base_font_bin:np3d_resources_twl_bin,
-        baseFont?np3d_base_font_bin_size:np3d_resources_twl_bin_size, 0),
-        "Cannot open embedded resources");
+    openArchive(archive.get(),name);
     auto iterator = mz_zip_reader_extract_file_iter_new(archive.get(), name, 0);
     require(iterator, std::string("Cannot open embedded resource: ") + name);
     std::vector<uint8_t> buffer(BufferSize);
@@ -38,7 +47,7 @@ std::vector<uint8_t> readResource(const char* name) {
 
 void writeResource(const char* name, const std::string& path) {
     auto archive=std::make_unique<mz_zip_archive>();*archive={};
-    require(mz_zip_reader_init_mem(archive.get(),np3d_resources_twl_bin,np3d_resources_twl_bin_size,0),"Cannot open embedded resources");
+    openArchive(archive.get(),name);
     int index=mz_zip_reader_locate_file(archive.get(),name,nullptr,0);
     mz_zip_archive_file_stat info;
     require(index>=0 && mz_zip_reader_file_stat(archive.get(),index,&info),"Cannot read embedded resource version");
@@ -75,9 +84,7 @@ void writeResource(const char* name, const std::string& path) {
 
 uint32_t resourceSize(const char* name) {
     auto archive=std::make_unique<mz_zip_archive>();*archive={};
-    bool baseFont=std::strcmp(name,"fonts/song12.nftr")==0;
-    require(mz_zip_reader_init_mem(archive.get(),baseFont?np3d_base_font_bin:np3d_resources_twl_bin,
-        baseFont?np3d_base_font_bin_size:np3d_resources_twl_bin_size,0),"Cannot open embedded resources");
+    openArchive(archive.get(),name);
     int index=mz_zip_reader_locate_file(archive.get(),name,nullptr,0);
     mz_zip_archive_file_stat info;
     require(index>=0 && mz_zip_reader_file_stat(archive.get(),index,&info),"Cannot read embedded resource size");

@@ -1,6 +1,6 @@
 # NitroPatcher3DS User Guide
 
-NitroPatcher3DS applies translation patches and other modifications to NDS game cartridges on a 3DS, 2DS, DSi or DSi XL (LL). Games read data from both the cartridge and the SD card, and save directly to the original cartridge.
+NitroPatcher3DS applies translation patches and other modifications to NDS game cartridges on a 3DS, 2DS, DSi, DSi XL (LL), or an NDS / NDS Lite with a SuperCard miniSD. Games read data from both the cartridge and the storage card, and save directly to the original cartridge.
 
 ## Installation
 
@@ -26,6 +26,20 @@ To assign a startup shortcut, open Unlaunch's `OPTIONS`, assign the app to one o
 
 Launch the app directly from Unlaunch to retain DSi mode and access to the console's SD card and cartridge interface. Keep the app and patches on the console's SD card, with the game cartridge in Slot-1.
 
+### NDS / NDS Lite (SuperCard miniSD)
+
+You need a DS-mode-compatible SuperCard miniSD running SuperFW, and a console with FlashMe configured to boot Slot-2 in DS mode.
+
+1. Extract `NitroPatcherNDS.zip` and copy `BOOT.NDS` and the `nitro-patcher` folder to the root of the SuperCard's storage card. Back up any existing `BOOT.NDS` first. `BOOT.NDS` contains the app, fonts and translations. Keep its name and location.
+2. Put your patches in `nitro-patcher/patches/`.
+3. Leave Slot-1 empty and use FlashMe to start the SuperCard in DS mode. SuperFW loads `BOOT.NDS`.
+4. Select your language on first launch, then insert the matching retail NDS cartridge when the cartridge prompt appears and press A to read it. If no cartridge is found, check that it is inserted and press A again.
+5. Select your patches and press START to prepare and launch the game. Keep both cartridges inserted while playing.
+
+If Slot-1 already contained a cartridge at startup and pressing A does not identify it, remove and reinsert the game cartridge, then press A again.
+
+Patches, settings and cache files are stored under `nitro-patcher` on the SuperCard's storage card. The app's `sd:/` paths refer to this card as well.
+
 ### Patch folder
 
 Put patches directly in the `patches` folder. The app only lists patch files at this level.
@@ -46,7 +60,7 @@ Check that your cartridge matches the game region and revision required by the p
 
 The first time you open the app, choose an interface language. Move up or down to preview each language, then press A to confirm.
 
-Once the cartridge has been read, the top screen shows the game icon and title. The bottom screen lists your patches.
+At the cartridge prompt, insert your game cartridge and press A to read it. Once it has been read, the top screen shows the game icon and title. The bottom screen lists your patches.
 
 1. Use Up and Down to move through the list. Press A to enable or disable a patch.
 2. Press START to launch the game.
@@ -56,7 +70,7 @@ The app remembers the enabled patches and their order for each game, and restore
 
 During preparation, the screen shows the current step, progress, elapsed time and estimated time remaining. While processing files, it also shows the current file number and total file count. The remaining time is estimated for the whole preparation process and adjusts to the actual processing speed.
 
-Reopen the app after adding patches or changing cartridges.
+Reopen the app after adding patches. To change cartridges or recover after removing and reinserting a cartridge, press X and select **Read another Game Card**. Follow the insertion prompt and press A. The app restores the saved patch selection for that game.
 
 ### Using multiple patches
 
@@ -83,6 +97,7 @@ Patch information comes from the package itself. The app indicates when a patch 
 ## Menu
 
 - **Start original**: Launch the current cartridge without applying patches.
+- **Read another Game Card**: Return to the cartridge prompt. Remove and reinsert your cartridge, then press A to read it.
 - **Environment report**: Create a report about the console and SD card to help diagnose problems.
 - **Interface language**: Choose Simplified Chinese, Traditional Chinese, Japanese, English or Korean. Press A to save your choice, or B to restore the previous language.
 - **About**: View the app version, author and open source projects used. Press A to read the licenses.

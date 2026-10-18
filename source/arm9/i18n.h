@@ -12,7 +12,8 @@ enum class Text {
     ReadHeader, InitCard, SecureRead, SecureCheck, ReadCard, ReadPatch, FindCache, RemoveUnfinished,
     PatchDirectory, Extract, Preprocess, ReadDirectory, PrepareFiles, Arrange, Apply, Replace, WriteCache,
     RemoveTemporary, FinishCache, CheckCache, CheckData, PrepareDSi, Sequence, Launch, SelectLanguage,
-    AboutAuthor, AboutVersion, KeyHint, Counter, Percentage, FileCounter, Remaining, Estimating, PrepareLaunch, Licenses, Count
+    AboutAuthor, AboutVersion, KeyHint, Counter, Percentage, FileCounter, Remaining, Estimating, PrepareLaunch, Licenses,
+    InsertCard, ReadCardPrompt, ReinsertCardPrompt, IdentifyCard, ChangeCard, Count
 };
 extern int LanguageCount;
 extern std::vector<std::string> languageCodes;

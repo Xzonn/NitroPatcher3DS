@@ -38,7 +38,8 @@ try {
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     foreach ($target in @(
         @{ Package = "NitroPatcher3DS.zip"; Source = "NitroPatcher3DS.cia"; Entry = "NitroPatcher3DS.cia" },
-        @{ Package = "NitroPatcherDSi.zip"; Source = "NitroPatcher3DS.nds"; Entry = "nitro-patcher/app/NitroPatcher3DS.nds" }
+        @{ Package = "NitroPatcherDSi.zip"; Source = "NitroPatcher3DS.nds"; Entry = "nitro-patcher/app/NitroPatcher3DS.nds" },
+        @{ Package = "NitroPatcherNDS.zip"; Source = "NitroPatcherNDS.nds"; Entry = "BOOT.NDS" }
     )) {
         $package = [IO.Compression.ZipArchive]::new(
             [IO.File]::Create("$projectRoot/out/$($target.Package)"),
@@ -48,7 +49,7 @@ try {
             [void]$package.CreateEntry("nitro-patcher/")
             [void]$package.CreateEntry("nitro-patcher/patches/")
             [void]$package.CreateEntry("nitro-patcher/patches/Place patches here")
-            if ($target.Source.EndsWith(".nds")) {
+            if ($target.Entry.StartsWith("nitro-patcher/app/")) {
                 [void]$package.CreateEntry("nitro-patcher/app/")
             }
             [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile(

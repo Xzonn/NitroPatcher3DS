@@ -13,6 +13,7 @@ struct GameCard final : np3d::Source {
     alignas(4) uint8_t prefix[0x8000] = {};
     alignas(4) uint8_t headerData[0x1000] = {};
     alignas(4) uint32_t block[128];
+    alignas(4) uint32_t identity[128];
     uint32_t blockOffset = UINT32_MAX;
 
     GameCard(uint32_t* chipId) {
@@ -45,6 +46,7 @@ struct GameCard final : np3d::Source {
         encrypt_arm9(code, secure.data());
         require(swiCRC16(0xffff, secure.data(), secure.size()) == header.secureCRC16,
             "Game Card secure area checksum mismatch");
+        if (!isDSiMode()) cardRead(0x8000,identity,sizeof(identity));
     }
 
     void read(uint32_t offset, void* output, uint32_t length) override {
@@ -76,3 +78,8 @@ struct GameCard final : np3d::Source {
 }
 
 np3d::SourcePtr openGameCard(uint32_t* chipId) { return std::make_shared<GameCard>(chipId); }
+bool gameCardMatches(np3d::SourcePtr card) {
+    alignas(4) uint32_t current[128];
+    cardRead(0x8000,current,sizeof(current));
+    return std::memcmp(std::static_pointer_cast<GameCard>(card)->identity,current,sizeof(current))==0;
+}

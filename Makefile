@@ -1,11 +1,12 @@
-.PHONY: all launcher bootstrap verify patch-arm9 host
+.PHONY: all launcher launcher-slot2 bootstrap verify patch-arm9 host
 
 export DIAGNOSTIC ?= 0
 export LAUNCH_TRACE ?= 0
 export PREPARE_TRACE ?= 0
+export SLOT2 ?= 0
 export NP3D_VERSION := $(shell git describe --always --dirty)
 
-all: launcher bootstrap
+all: launcher launcher-slot2
 
 patch-arm9:
 	$(MAKE) -C source/patch MODE=arm9
@@ -29,9 +30,21 @@ launcher: patch-arm9 bootstrap
 	cp vendor/TWiLightMenu/slot1launch/slot1launch.arm9.elf out/NitroPatcher3DS.arm9.elf
 	cp vendor/TWiLightMenu/slot1launch/slot1launch.arm7.elf out/NitroPatcher3DS.arm7.elf
 
+launcher-slot2: launcher
+	$(MAKE) -C vendor/TWiLightMenu/slot1launch clean
+	rm -f build/launcher-mode
+	mkdir -p vendor/TWiLightMenu/slot1launch/data build/nitrofs/fonts
+	cp build/np3d_load.bin vendor/TWiLightMenu/slot1launch/data/np3d_load.bin
+	cp assets/fonts/*.nftr build/nitrofs/fonts/
+	python3 source/build_resources.py --slot2
+	$(MAKE) -C vendor/TWiLightMenu/slot1launch SLOT2=1
+	cp vendor/TWiLightMenu/slot1launch/slot1launch.nds out/NitroPatcherNDS.nds
+	cp vendor/TWiLightMenu/slot1launch/slot1launch.arm9.elf out/NitroPatcherNDS.arm9.elf
+	cp vendor/TWiLightMenu/slot1launch/slot1launch.arm7.elf out/NitroPatcherNDS.arm7.elf
+
 bootstrap: build/lzss
 	printf '%s\n' "$(LAUNCH_TRACE)" > build/bootstrap-mode.next
-	if ! cmp -s build/bootstrap-mode.next build/bootstrap-mode; then for directory in arm9 bootloaderi bootloaderi2 cardenginei/arm7 cardenginei/arm7_alt cardenginei/arm7_twlsdk cardenginei/arm7_twlsdk3; do $(MAKE) -C vendor/nds-bootstrap/retail/$$directory clean || exit $$?; done; fi
+	if ! cmp -s build/bootstrap-mode.next build/bootstrap-mode; then for directory in arm9 bootloader bootloader2 bootloaderi bootloaderi2 cardenginei/arm7 cardenginei/arm7_alt cardenginei/arm7_twlsdk cardenginei/arm7_twlsdk3; do $(MAKE) -C vendor/nds-bootstrap/retail/$$directory clean || exit $$?; done; fi
 	mv build/bootstrap-mode.next build/bootstrap-mode
 	PATH="$(CURDIR)/build:$$PATH" $(MAKE) -C vendor/nds-bootstrap/retail GIT_VER=eb7feabb
 	mkdir -p out
@@ -50,3 +63,9 @@ verify: all
 	$(DEVKITARM)/bin/arm-none-eabi-objcopy -O binary --remove-section=.twl --remove-section=.twl_bss out/NitroPatcher3DS.arm7.elf temp/linked.arm7.bin
 	cmp temp/packed.arm9.bin temp/linked.arm9.bin
 	cmp temp/packed.arm7.bin temp/linked.arm7.bin
+	ndstool -i out/NitroPatcherNDS.nds
+	ndstool -x out/NitroPatcherNDS.nds -9 temp/packed-nds.arm9.bin -7 temp/packed-nds.arm7.bin
+	$(DEVKITARM)/bin/arm-none-eabi-objcopy -O binary --remove-section=.twl --remove-section=.twl_bss out/NitroPatcherNDS.arm9.elf temp/linked-nds.arm9.bin
+	$(DEVKITARM)/bin/arm-none-eabi-objcopy -O binary --remove-section=.twl --remove-section=.twl_bss out/NitroPatcherNDS.arm7.elf temp/linked-nds.arm7.bin
+	cmp temp/packed-nds.arm9.bin temp/linked-nds.arm9.bin
+	cmp temp/packed-nds.arm7.bin temp/linked-nds.arm7.bin

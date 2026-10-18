@@ -37,3 +37,10 @@ jobs:
           path: out/NitroPatcherDSi.zip
           archive: false
           if-no-files-found: error
+
+      - name: Upload NDS package
+        uses: actions/upload-artifact@v7
+        with:
+          path: out/NitroPatcherNDS.zip
+          archive: false
+          if-no-files-found: error

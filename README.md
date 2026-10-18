@@ -1,6 +1,6 @@
 # NitroPatcher3DS
 
-本项目可以在 3DS／2DS 和 DSi／DSi LL（XL）上直接对正版 NDS 卡带使用汉化补丁。
+本项目可以在 3DS／2DS、DSi／DSi LL（XL），以及使用 SuperCard miniSD 的 NDS／NDS Lite 上，对正版 NDS 卡带使用汉化补丁。
 
 ## 构建
 
@@ -16,8 +16,10 @@
 | -------------------------------------------------------------- | ------------------------------ |
 | `out/NitroPatcher3DS.zip`                                      | 3DS／2DS 安装包，包含 CIA 和中英文说明 |
 | `out/NitroPatcherDSi.zip`                                      | DSi 安装包，通过 Unlaunch 启动，包含中英文说明 |
+| `out/NitroPatcherNDS.zip`                                      | NDS 安装包，通过 SuperFW 的 DS 模式启动，包含中英文说明 |
 | `out/NitroPatcher3DS.cia`                                      | 原卡带启动程序安装包           |
-| `out/NitroPatcher3DS.nds`                                      | DS／DSi 程序                   |
+| `out/NitroPatcher3DS.nds`                                      | 3DS／DSi 程序                   |
+| `out/NitroPatcherNDS.nds`                                      | NDS／Slot-2 程序，安装时命名为 `BOOT.NDS` |
 | `out/NitroPatcher3DS.arm9.elf`、`out/NitroPatcher3DS.arm7.elf` | 启动程序调试符号               |
 | `out/nds-bootstrap.nds`                                        | nds-bootstrap 参考引擎构建结果 |
 

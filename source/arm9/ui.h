@@ -3,7 +3,7 @@
 #include <nds.h>
 
 namespace ui {
-enum class Action { None, Launch, Original, Report };
+enum class Action { None, Launch, Original, Report, ReadCard, ChangeCard };
 struct PreparationProgress {
     uint32_t fileNumber = 0, fileCount = 0;
     int64_t remaining = -1;
@@ -15,7 +15,7 @@ void initialize();
 bool ready();
 void chooseInitialLanguage();
 void setGame(np3d::SourcePtr card, const sNDSHeader& header);
-void noCard();
+void noCard(bool missing = false, bool reinsert = false);
 Action update();
 const std::vector<std::string>& selectedPatches();
 void preparing();

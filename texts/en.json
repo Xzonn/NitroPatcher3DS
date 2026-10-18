@@ -194,8 +194,8 @@
   {
     "index": 33,
     "key": "game_card.missing.body",
-    "original": "Insert a Game Card and reopen the app.",
-    "translation": "Insert a Game Card and reopen the app."
+    "original": "Check that the Game Card is inserted, then press A to retry.",
+    "translation": "Check that the Game Card is inserted, then press A to retry."
   },
   {
     "index": 34,
@@ -442,5 +442,35 @@
     "key": "about.licenses",
     "original": "Licenses",
     "translation": "Licenses"
+  },
+  {
+    "index": 75,
+    "key": "game_card.insert.title",
+    "original": "Insert a Game Card",
+    "translation": "Insert a Game Card"
+  },
+  {
+    "index": 76,
+    "key": "game_card.insert.body",
+    "original": "Insert a Game Card, then press A to read it.",
+    "translation": "Insert a Game Card, then press A to read it."
+  },
+  {
+    "index": 77,
+    "key": "game_card.reinsert.body",
+    "original": "Remove and reinsert the Game Card, then press A to read it.",
+    "translation": "Remove and reinsert the Game Card, then press A to read it."
+  },
+  {
+    "index": 78,
+    "key": "game_card.read",
+    "original": "Read Game Card",
+    "translation": "Read Game Card"
+  },
+  {
+    "index": 79,
+    "key": "menu.change_card",
+    "original": "Read another Game Card",
+    "translation": "Read another Game Card"
   }
 ]
