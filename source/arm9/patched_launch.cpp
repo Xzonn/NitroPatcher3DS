@@ -50,7 +50,7 @@ void writePatchedLaunch(const np3d::Prepared& prepared, np3d::SourcePtr card, ui
     }
     static const char configuration[] =
         "[NDS-BOOTSTRAP]\nNDS_PATH=np3d:/rom.nds\nSAVE_RELOCATION=0\nDSI_MODE=0\nCONSOLE_MODEL=2\n"
-        "BOOST_CPU=1\nBOOST_VRAM=0\nASYNC_CARD_READ=0\nCARD_READ_DMA=0\nDEBUG=0\nLOGGING=0\n";
+        "BOOST_CPU=1\nBOOST_VRAM=0\nASYNC_CARD_READ=-1\nCARD_READ_DMA=-1\nDEBUG=0\nLOGGING=0\n";
     Disk settings("sd:/nitro-patcher/config/nds-bootstrap.ini", "wb");
     settings.write(0, configuration, sizeof(configuration) - 1);
     settings.sync();
