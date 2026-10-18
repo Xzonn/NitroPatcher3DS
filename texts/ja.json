@@ -436,5 +436,11 @@
     "key": "prepare.stage.launch_files",
     "original": "Preparing launch files",
     "translation": "起動用ファイルを準備"
+  },
+  {
+    "index": 74,
+    "key": "about.licenses",
+    "original": "Licenses",
+    "translation": "ライセンス"
   }
 ]

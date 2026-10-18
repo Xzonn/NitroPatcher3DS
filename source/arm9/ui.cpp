@@ -12,12 +12,14 @@ namespace {
 constexpr const char* Root = "sd:/nitro-patcher";
 constexpr uint16_t White = 0xffff, Black = 0x8000, Gray = 0xe739;
 constexpr int Visible = 6;
-enum class Page { Home, Language, Menu, PatchInfo, About, Progress, Report, Empty, NoCard, Error, Details, Loading };
-enum class Command { Toggle, Start, Menu, Info, Back, Language, Original, Report, About, PickLanguage, Previous, Next, Up, Down, Details };
+enum class Page { Home, Language, Menu, PatchInfo, About, Licenses, LicenseText, Progress, Report, Empty, NoCard, Error, Details, Loading };
+enum class Command { Toggle, Start, Menu, Info, Back, Language, Original, Report, About, Licenses, ReadLicense, PickLanguage, Previous, Next, Up, Down, Details };
+constexpr const char* Licenses[] = {"NitroPatcher3DS.txt", "md4c.txt", "fmt.txt", "Gulim-OFL.txt", "Gulim-AUTHORS.txt", "liblzma.txt"};
+constexpr int LicenseCount = sizeof(Licenses)/sizeof(Licenses[0]);
 struct Hit { int x, y, width, height; Command command; int argument; };
 struct State {
     Page page = Page::Home, languageFrom = Page::Home;
-    int focus = 0, top = 0, languageBefore = 0, homeFocus = 0, homeTop = 0, textTop = 0;
+    int focus = 0, top = 0, languageBefore = 0, homeFocus = 0, homeTop = 0, textTop = 0, licenseFocus = 0;
     unsigned int ticks = 0, focusTick = 0;
     bool first = false, hasCard = false, fatal = false, mismatch = false, reportWorking = false;
     int patchNumber = 1;
@@ -164,10 +166,11 @@ void upper() {
             if (!item.value.empty()) y=paragraph(0,format(item.key,fmt::arg(item.argument,item.value)),8,y);
         }
         if (y==58) text(0,tr(Text::NoMetadata),8,y);
-    } else if (state.page==Page::About) {
+    } else if (state.page==Page::About || state.page==Page::Licenses || state.page==Page::LicenseText) {
         text(0,"NitroPatcher3DS",8,44);text(0,format(Text::AboutAuthor,fmt::arg("author","Xzonn")),8,72);
         text(0,format(Text::AboutVersion,fmt::arg("version",NP3D_VERSION)),8,100);
         text(0,format(Text::License,fmt::arg("license","GPL v3")),8,128);
+        if (state.page==Page::LicenseText) scrollText(0,Licenses[state.licenseFocus],8,160,240,true);
     } else if (state.hasBanner) {
         for (int y=0;y<32;y++) for (int x=0;x<32;x++) {
             int pixel=((y/8)*4+x/8)*64+(y%8)*8+x%8;
@@ -234,8 +237,8 @@ void render() {
         }
         backKey(); break;
     }
-    case Page::PatchInfo: case Page::Details:
-        heading(tr(state.page==Page::PatchInfo?Text::Intro:Text::Details));
+    case Page::PatchInfo: case Page::Details: case Page::LicenseText:
+        heading(tr(state.page==Page::PatchInfo?Text::Intro:state.page==Page::LicenseText?Text::Licenses:Text::Details));
         for (int index=0;index<7 && state.textTop+index<int(state.lines.size());index++) text16(1,state.lines[state.textTop+index],8,34+index*16);
         if (state.lines.size()>7) {
             fill(1,247,32,2,116,Gray);
@@ -249,7 +252,19 @@ void render() {
     case Page::About:
         heading(tr(Text::About)); text(1,tr(Text::Components),8,34);
         text(1,"nds-bootstrap",8,54);text(1,"TWiLight Menu++",8,70);text(1,"nitro-patcher / md4c / fmt",8,86);
-        paragraph(1,"miniz / cJSON / xdelta / ndstool\nmbed TLS / uni-algo / liblzma",8,106);backKey();break;
+        paragraph(1,"miniz / cJSON / xdelta / ndstool\nmbed TLS / uni-algo / liblzma",8,106);separator();
+        softkey(hint("A",Text::Licenses),8,161,132,Command::Licenses);
+        softkey(hint("B",Text::Back),148,161,108,Command::Back);break;
+    case Page::Licenses:
+        heading(tr(Text::Licenses));range(LicenseCount);
+        for (int row=0;row<Visible && state.top+row<LicenseCount;row++) {
+            int index=state.top+row,y=32+row*20;
+            if (state.focus==index) fill(1,8,y,240,20,Gray);
+            scrollText(1,Licenses[index],16,y+4,224,state.focus==index);
+            hits.push_back({8,y,240,20,Command::ReadLicense,index});
+        }
+        separator();softkey(hint("A",Text::Select),8,161,132,Command::ReadLicense,state.focus);
+        softkey(hint("B",Text::Back),148,161,108,Command::Back);break;
     case Page::Progress:
         heading(tr(Text::Preparing));text(1,format(Text::Counter,fmt::arg("current",state.patchNumber),fmt::arg("total",state.selected.size())),8,34);
         if (!state.selected.empty()) scrollText(1,filename(state.selected[std::min<size_t>(state.patchNumber-1,state.selected.size()-1)]),8,52,240,true);
@@ -291,8 +306,8 @@ void render() {
 void returnHome() { go(!state.hasCard?Page::NoCard:state.patches.empty()?Page::Empty:Page::Home); }
 void scrollLines(int distance) { state.textTop=std::clamp(state.textTop+distance,0,std::max(0,int(state.lines.size())-7)); }
 void move(int distance,bool page=false) {
-    if (state.page==Page::PatchInfo || state.page==Page::Details) {scrollLines(distance*(page?7:1));return;}
-    int count=state.page==Page::Language?LanguageCount:state.page==Page::Menu?4:state.page==Page::Home?state.patches.size():0;
+    if (state.page==Page::PatchInfo || state.page==Page::Details || state.page==Page::LicenseText) {scrollLines(distance*(page?7:1));return;}
+    int count=state.page==Page::Language?LanguageCount:state.page==Page::Menu?4:state.page==Page::Licenses?LicenseCount:state.page==Page::Home?state.patches.size():0;
     if (!count) return;
     state.focus=page?std::clamp(state.focus+distance*Visible,0,count-1):(state.focus+distance+count)%count;
     if (page) state.top=std::clamp(state.top+distance*Visible,0,std::max(0,count-Visible));
@@ -315,6 +330,13 @@ void command(Command value,int argument=0) {
     case Command::Report: pending=Action::Report; break;
     case Command::Menu: go(Page::Menu); break;
     case Command::About: go(Page::About); break;
+    case Command::Licenses: go(Page::Licenses); break;
+    case Command::ReadLicense: {
+        state.licenseFocus=argument;
+        auto data=np3d::readResource((std::string("licenses/")+Licenses[argument]).c_str());
+        state.lines=wrap(una::utf8to16u(std::string(data.begin(),data.end())),228);
+        go(Page::LicenseText);break;
+    }
     case Command::Language: state.languageFrom=state.page;state.languageBefore=currentLanguage();go(Page::Language);break;
     case Command::PickLanguage:
         useLanguage(argument);state.settings.language=languageCodes[argument];save();
@@ -331,6 +353,8 @@ void command(Command value,int argument=0) {
         if (state.page==Page::Language) {useLanguage(state.languageBefore);go(state.languageFrom);}
         else if (state.page==Page::PatchInfo) {state.page=Page::Home;state.focus=state.homeFocus;state.top=state.homeTop;state.focusTick=state.ticks;}
         else if (state.page==Page::Details) go(Page::Error);
+        else if (state.page==Page::LicenseText) {state.lines.clear();go(Page::Licenses);state.focus=state.licenseFocus;state.top=std::max(0,state.focus-Visible+1);}
+        else if (state.page==Page::Licenses) go(Page::About);
         else if (state.page==Page::About) {go(Page::Menu);state.focus=3;}
         else returnHome();
         break;
@@ -407,6 +431,8 @@ Action update() {
         else if (state.page==Page::Menu) {
             const Command values[]={Command::Original,Command::Report,Command::Language,Command::About};command(values[state.focus]);
         } else if (state.page==Page::Empty) command(Command::Original);
+        else if (state.page==Page::About) command(Command::Licenses);
+        else if (state.page==Page::Licenses) command(Command::ReadLicense,state.focus);
         else if (state.page==Page::Error) command(Command::Details);
         changed=true;
     }
@@ -416,7 +442,7 @@ Action update() {
             Command value=hit.command;int argument=hit.argument;command(value,argument);changed=true;break;
         }
     }
-    if (changed || ((state.page==Page::Home || state.page==Page::PatchInfo) && state.ticks%4==0)) render();
+    if (changed || ((state.page==Page::Home || state.page==Page::PatchInfo || state.page==Page::Licenses || state.page==Page::LicenseText) && state.ticks%4==0)) render();
     return pending;
 }
 const std::vector<std::string>& selectedPatches() { return state.selected; }

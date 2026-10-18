@@ -22,7 +22,7 @@ const char* const keys[] = {
     "prepare.stage.preprocess","prepare.stage.read_game_directory","prepare.stage.prepare_files","prepare.stage.arrange_files","prepare.stage.apply_patch","prepare.stage.replace_file",
     "prepare.stage.write_cache","prepare.stage.remove_temporary","prepare.stage.finish_cache","prepare.stage.check_cache","prepare.stage.check_game_data","prepare.stage.prepare_dsi",
     "prepare.stage.patch_sequence","launch.starting","language_selection.prompt","about.author","about.version","common.key_hint","common.item_counter","common.percentage",
-    "prepare.file_counter","prepare.remaining","prepare.estimating","prepare.stage.launch_files"
+    "prepare.file_counter","prepare.remaining","prepare.estimating","prepare.stage.launch_files","about.licenses"
 };
 static_assert(sizeof(keys)/sizeof(keys[0])==int(Text::Count));
 using Json = std::unique_ptr<cJSON,decltype(&cJSON_Delete)>;

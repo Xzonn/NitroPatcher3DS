@@ -28,12 +28,6 @@ launcher: patch-arm9 bootstrap
 	cp vendor/TWiLightMenu/slot1launch/slot1launch.nds out/NitroPatcher3DS.nds
 	cp vendor/TWiLightMenu/slot1launch/slot1launch.arm9.elf out/NitroPatcher3DS.arm9.elf
 	cp vendor/TWiLightMenu/slot1launch/slot1launch.arm7.elf out/NitroPatcher3DS.arm7.elf
-	mkdir -p out/licenses
-	cp LICENSE out/licenses/NitroPatcher3DS.txt
-	cp vendor/md4c/LICENSE.md out/licenses/md4c.txt
-	cp vendor/fmt/LICENSE out/licenses/fmt.txt
-	cp assets/fonts/Gulim-OFL.txt assets/fonts/Gulim-AUTHORS.txt out/licenses/
-	cp /opt/np3d/liblzma/COPYING out/licenses/liblzma.txt
 
 bootstrap: build/lzss
 	printf '%s\n' "$(LAUNCH_TRACE)" > build/bootstrap-mode.next

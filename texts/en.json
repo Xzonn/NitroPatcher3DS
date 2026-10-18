@@ -436,5 +436,11 @@
     "key": "prepare.stage.launch_files",
     "original": "Preparing launch files",
     "translation": "Preparing launch files"
+  },
+  {
+    "index": 74,
+    "key": "about.licenses",
+    "original": "Licenses",
+    "translation": "Licenses"
   }
 ]

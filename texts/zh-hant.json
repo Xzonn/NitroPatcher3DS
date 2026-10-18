@@ -436,5 +436,11 @@
     "key": "prepare.stage.launch_files",
     "original": "Preparing launch files",
     "translation": "準備啟動檔案"
+  },
+  {
+    "index": 74,
+    "key": "about.licenses",
+    "original": "Licenses",
+    "translation": "授權條款"
   }
 ]

@@ -23,7 +23,22 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw "CIA packaging failed with exit code $LASTEXITCODE."
     }
-    Compress-Archive -Path out/NitroPatcher3DS.cia,out/licenses -DestinationPath out/NitroPatcher3DS.zip -Force
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $package = [IO.Compression.ZipArchive]::new(
+        [IO.File]::Create("$projectRoot/out/NitroPatcher3DS.zip"),
+        [IO.Compression.ZipArchiveMode]::Create
+    )
+    try {
+        [void]$package.CreateEntry("nitro-patcher/")
+        [void]$package.CreateEntry("nitro-patcher/patches/")
+        [void]$package.CreateEntry("nitro-patcher/patches/Place patches here")
+        [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+            $package, "$projectRoot/out/NitroPatcher3DS.cia", "NitroPatcher3DS.cia"
+        )
+    }
+    finally {
+        $package.Dispose()
+    }
 }
 finally {
     Pop-Location
