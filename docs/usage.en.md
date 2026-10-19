@@ -24,7 +24,7 @@ You need a DSi with Unlaunch installed, and an NDS game cartridge compatible wit
 
 To assign a startup shortcut, open Unlaunch's `OPTIONS`, assign the app to one of the `BUTTON A / B / X / Y` options, then choose `SAVE & EXIT`. Hold that button while turning on the console to open the app.
 
-Launch the app directly from Unlaunch to retain DSi mode and access to the console's SD card and cartridge interface. Keep the app and patches on the console's SD card, with the game cartridge in Slot-1.
+You can also select `nitro-patcher/app/NitroPatcher3DS.nds` in TWiLight Menu++. Set the app to run in DSi mode with RAM disk set to None. If the loader locks hardware access, the app automatically restarts through Unlaunch before showing the cartridge prompt. Keep the app and patches on the console's SD card, with the game cartridge in Slot-1.
 
 ### NDS / NDS Lite (SuperCard miniSD)
 
@@ -117,5 +117,3 @@ If no patches appear, check that the files are directly inside `nitro-patcher/pa
 If you see a patch mismatch message, press A to view the details, then press B to go back and check your patches, cartridge revision and patch order.
 
 If preparation or launch fails, record the error details. When reporting a problem, include the app version, game title and revision, patch names and order, and `nitro-patcher/logs/prepare.log` from the SD card. You can also generate an environment report from the menu; it is saved to `nitro-patcher/logs/environment.log`.
-
-If the DSi reports that hardware access is locked, turn it on while holding A + B and launch `nitro-patcher/app/NitroPatcher3DS.nds` directly from Unlaunch's Filemenu.

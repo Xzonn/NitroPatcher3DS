@@ -14,6 +14,7 @@
 #include "patched_launch.h"
 #include "ui.h"
 #include "i18n.h"
+#include "FontGraphic.h"
 
 bool scfgUnlock = false;
 int TWLMODE = 0;
@@ -61,11 +62,38 @@ static void resetGameCard() {
     sysSetCardOwner(BUS_OWNER_ARM9);
 }
 
-int main() {
+#if !NP3D_SLOT2
+[[noreturn]] static void restartFromUnlaunch(int argc,char** argv) {
+    np3d::require(argc>0 && argv && argv[0],"Cannot determine the app path. Start this app from Unlaunch.");
+    std::string filename=argv[0];
+    if (filename.compare(0,5,"fat:/")==0) filename="sd:"+filename.substr(4);
+    np3d::require(filename.compare(0,4,"sd:/")==0,
+        "Start this app from the console SD card.");
+    std::u16string path=FontGraphic::utf8to16("sdmc:"+filename.substr(3));
+    np3d::require(path.size()<0x104,"App path is too long for Unlaunch.");
+
+    // Use TWiLight Menu++'s Unlaunch autoload layout.
+    std::memcpy((void*)0x02000800,"AutoLoadInfo",12);
+    *(u16*)0x0200080C=0x3F0;
+    *(u16*)0x0200080E=0;
+    *(u32*)0x02000810=BIT(0)|BIT(1);
+    *(u16*)0x02000814=0x7FFF;
+    *(u16*)0x02000816=0x7FFF;
+    std::memset((void*)0x02000818,0,0x20+0x208+0x1C0);
+    std::memcpy((void*)0x02000838,path.data(),path.size()*sizeof(char16_t));
+    *(u16*)0x0200080E=swiCRC16(0xFFFF,(void*)0x02000810,0x3F0);
+    DC_FlushAll();
+    fifoSendValue32(FIFO_USER_04,0x554E4C41);
+    while (true) swiWaitForVBlank();
+}
+#endif
+
+int main(int argc,char** argv) {
     np3d::setFatalHandler(stopWithMessage);
     fifoSendValue32(FIFO_PM,PM_REQ_SLEEP_DISABLE);
     consoleDemoInit();
 #if NP3D_SLOT2
+    (void)argc;(void)argv;
     np3d::require(!isDSiMode() && (dldiGetInternal()->features & FEATURE_SLOT_GBA),
         "Launch this build in DS mode from a Slot-2 flashcard.");
     np3d::require(fatMountSimple("sd",dldiGetInternal()),"Unable to access Slot-2 storage.");
@@ -78,8 +106,11 @@ int main() {
     int consoleModel=fifoGetValue32(FIFO_USER_05);
     fifoWaitValue32(FIFO_USER_06);
     uint32_t arm7Scfg=fifoGetValue32(FIFO_USER_06);
-    np3d::require(!isDSiMode() || consoleModel!=0 || arm7Scfg!=0,
-        "DSi hardware access is locked. Start this app directly from Unlaunch.");
+#if !NP3D_SLOT2
+    if (consoleModel==0 && arm7Scfg==0) restartFromUnlaunch(argc,argv);
+#else
+    (void)arm7Scfg;
+#endif
     if (isDSiMode() && !fatInitDefault()) stopWithMessage("Unable to access the SD card.");
     np3d::makeDirectory("sd:/nitro-patcher");
     ui::initialize();

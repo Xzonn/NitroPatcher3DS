@@ -24,7 +24,7 @@ NitroPatcher3DS 可以在 3DS／2DS、DSi／DSi LL（XL），以及使用 SuperC
 
 需要设置快捷启动时，在 Unlaunch 的 `OPTIONS` 中将一个 `BUTTON A / B / X / Y` 选项指定为该程序，再选择 `SAVE & EXIT` 保存。以后按住对应按键开机即可打开程序。
 
-请通过 Unlaunch 直接启动，保留 DSi 模式、主机 SD 卡和卡带接口的访问权限。补丁和程序都放在主机 SD 卡中，游戏卡带留在卡槽内。
+也可以从 TWiLight Menu++ 选择 `nitro-patcher/app/NitroPatcher3DS.nds` 启动，将该程序的运行模式设为 DSi 模式、RAM disk 设为 None。如果加载器锁定了硬件访问权限，程序会自动通过 Unlaunch 重新启动，再进入卡带识别界面。补丁和程序都放在主机 SD 卡中，游戏卡带留在卡槽内。
 
 ### NDS／NDS Lite（SuperCard miniSD）
 
@@ -117,5 +117,3 @@ XZP 补丁包可以直接使用，无需解压。ZIP 补丁包需要符合 XZP �
 如果提示补丁不匹配，按 A 查看详情，再按 B 返回检查补丁、卡带版本及多个补丁的顺序。
 
 准备或启动失败时，记录错误详情。反馈问题时，请附上软件版本、游戏名称与版本、补丁名称和应用顺序，以及 SD 卡上的 `nitro-patcher/logs/prepare.log`。也可以从菜单生成环境报告，报告保存在 `nitro-patcher/logs/environment.log`。
-
-DSi 如果提示硬件访问权限被锁定，请按住 A＋B 重新开机，从 Unlaunch 文件菜单直接启动 `nitro-patcher/app/NitroPatcher3DS.nds`。
