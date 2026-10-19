@@ -1,6 +1,7 @@
 #include "ui.h"
 #include "i18n.h"
 #include "resources.h"
+#include "storage_repair.h"
 #include "../patch/ui_data.h"
 #include "FontGraphic.h"
 #include "uni_algo/conv.h"
@@ -12,10 +13,10 @@ namespace {
 constexpr const char* Root = "sd:/nitro-patcher";
 constexpr uint16_t White = 0xffff, Black = 0x8000, Gray = 0xe739;
 constexpr int Visible = 6;
-enum class Page { Home, Language, Menu, PatchInfo, About, Licenses, LicenseText, Progress, Report, Empty, NoCard, Error, Details, Loading };
-enum class Command { Toggle, Start, Menu, Info, Back, Language, Original, Report, About, Licenses, ReadLicense, PickLanguage, Previous, Next, Up, Down, Details, ReadCard, ChangeCard };
-constexpr Text MenuLabels[] = {Text::Original,Text::ChangeCard,Text::Report,Text::Language,Text::About};
-constexpr Command MenuCommands[] = {Command::Original,Command::ChangeCard,Command::Report,Command::Language,Command::About};
+enum class Page { Home, Language, Menu, PatchInfo, About, Licenses, LicenseText, Progress, Report, Empty, NoCard, Error, Details, Loading, Storage };
+enum class Command { Toggle, Start, Menu, Info, Back, Language, Original, Report, About, Licenses, ReadLicense, PickLanguage, Previous, Next, Up, Down, Details, ReadCard, ChangeCard, RepairStorage };
+constexpr Text MenuLabels[] = {Text::Original,Text::ChangeCard,Text::Report,Text::Language,Text::StorageTitle,Text::About};
+constexpr Command MenuCommands[] = {Command::Original,Command::ChangeCard,Command::Report,Command::Language,Command::RepairStorage,Command::About};
 constexpr int MenuCount = sizeof(MenuCommands)/sizeof(MenuCommands[0]);
 constexpr const char* Licenses[] = {"NitroPatcher3DS.txt", "md4c.txt", "fmt.txt", "Gulim-OFL.txt", "Gulim-AUTHORS.txt", "liblzma.txt"};
 constexpr int LicenseCount = sizeof(Licenses)/sizeof(Licenses[0]);
@@ -26,6 +27,7 @@ struct State {
     unsigned int ticks = 0, focusTick = 0;
     bool first = false, hasCard = false, fatal = false, mismatch = false, reportWorking = false;
     bool cardMissing = false, cardReinsert = false;
+    bool storageWorking = false, storageReady = false, storageWriting = false;
     int patchNumber = 1;
     uint32_t completed = 0, total = 0;
     uint64_t elapsed = 0;
@@ -161,6 +163,8 @@ void upper() {
         text(0,tr("zh-hans",Text::SelectLanguage),8,60);
         text(0,tr("ja",Text::SelectLanguage),8,92);
         text(0,tr("en",Text::SelectLanguage),8,124);
+    } else if (state.page==Page::Storage) {
+        paragraph(0,tr(state.storageWriting?Text::StorageWriting:Text::StorageNotice),8,42);
     } else if (state.page==Page::PatchInfo) {
         scrollText(0,filename(state.patches[state.homeFocus]),8,34,240,true);
         int y=58;
@@ -291,6 +295,26 @@ void render() {
         heading(tr(state.reportWorking?Text::ReportWorking:Text::ReportDone));
         separator();
         if (!state.reportWorking) {paragraph(1,"sd:/nitro-patcher/logs/\nenvironment.log",8,40);backKey();} break;
+    case Page::Storage:
+        heading(tr(Text::StorageTitle));
+        if (state.storageWorking) {
+            paragraph(1,state.stage,8,40);
+            fill(1,8,96,240,10,Gray);
+            unsigned int percent=state.total?std::min<uint64_t>(100,uint64_t(state.completed)*100/state.total):0;
+            fill(1,8,96,240*percent/100,10,Black);
+            text(1,format(Text::Percentage,fmt::arg("percent",percent)),8,120);
+        } else {
+            for (int index=0;index<7 && state.textTop+index<int(state.lines.size());index++)
+                text16(1,state.lines[state.textTop+index],8,34+index*16);
+            separator();
+            if (state.storageReady) softkey(hint("A",Text::StorageConfirm),8,161,132,Command::RepairStorage);
+            softkey(hint("B",Text::Back),148,161,108,Command::Back);
+            if (state.lines.size()>7) {
+                softkey("↑",184,178,28,Command::Up);softkey("↓",220,178,28,Command::Down);
+                text(1,format(Text::Counter,fmt::arg("current",state.textTop+1),fmt::arg("total",state.lines.size())),8,178);
+            }
+        }
+        break;
     case Page::Loading:
         heading(tr(Text::Loading));separator();break;
     case Page::Empty:
@@ -328,6 +352,10 @@ void move(int distance,bool page=false) {
     state.focusTick=state.ticks;
 }
 void command(Command value,int argument=0) {
+    if (storage::writeBlocked() && (value==Command::Toggle || value==Command::Start ||
+        value==Command::Original || value==Command::Report || value==Command::PickLanguage)) {
+        state.fatal=false;state.mismatch=false;state.detail=tr(Text::StorageIoError);go(Page::Error);return;
+    }
     switch (value) {
     case Command::Toggle: {
         if (state.page!=Page::Home) break;
@@ -339,6 +367,7 @@ void command(Command value,int argument=0) {
     case Command::Start: pending=Action::Launch; break;
     case Command::Original: if (state.hasCard) pending=Action::Original; break;
     case Command::Report: pending=Action::Report; break;
+    case Command::RepairStorage: pending=Action::RepairStorage;break;
     case Command::ReadCard: pending=Action::ReadCard; break;
     case Command::ChangeCard: pending=Action::ChangeCard; break;
     case Command::Menu: go(Page::Menu); break;
@@ -470,6 +499,58 @@ void progress(const char* stage,uint32_t completed,uint32_t total,const char* de
     state.stage=progressText(stage);state.completed=completed;state.total=total;state.elapsed=elapsed;state.preparation=preparation;state.progressDetail=detail;render();
 }
 void report(bool working) {go(Page::Report);state.reportWorking=working;render();}
+void repairStorage() {
+    go(Page::Storage);state.storageWorking=true;state.storageWriting=false;state.storageReady=false;
+    auto progress=[](storage::Stage stage,unsigned int copy,uint32_t done,uint32_t total) {
+        static const Text labels[]={Text::StorageDirectories,Text::StorageAllocation,Text::StorageCompare,
+            Text::StorageBackup,Text::StorageRepair,Text::StorageVerify};
+        state.stage=format(labels[int(stage)],fmt::arg("copy",copy+1));
+        state.completed=done;state.total=total;render();
+    };
+    progress(storage::Stage::Directories,0,0,0);
+    auto result=storage::inspect(progress);
+    auto show=[&]() {
+        static const Text labels[]={Text::StorageClean,Text::StorageReady,Text::StorageDamaged,Text::StorageAmbiguous,
+            Text::StorageUnsupported,Text::StorageBusy,Text::StorageMemory,Text::StorageIoError,Text::StorageRepaired};
+        std::string detail=tr(labels[int(result.status)]);
+        for (unsigned int index=0;index<result.count;index++) {
+            const auto& copy=result.copies[index];
+            detail+="\n\n"+format(Text::StorageCopy,fmt::arg("copy",index+1),fmt::arg("files",copy.files),
+                fmt::arg("conflicts",copy.conflicts),fmt::arg("lost",copy.lost),fmt::arg("invalid",copy.invalid));
+            if (!copy.problem.empty()) detail+="\n"+copy.problem;
+        }
+        detail+="\n\n"+format(Text::StorageDifferences,fmt::arg("sectors",result.differentSectors));
+        if (result.fsInfo) detail+="\n"+std::string(tr(Text::StorageFsInfo));
+        if (!result.backup.empty()) detail+="\n\n"+format(Text::StorageBackupPath,fmt::arg("path",result.backup));
+        state.lines=wrap(una::utf8to16u(detail),240);state.textTop=0;
+        state.storageWorking=false;state.storageWriting=false;state.storageReady=result.status==storage::Status::Repairable;
+        render();
+    };
+    show();
+    while (true) {
+        swiWaitForVBlank();scanKeys();auto down=keysDown(),repeat=keysDownRepeat();
+        bool back=down&KEY_B,repair=down&KEY_A;
+        if (repeat&KEY_UP) scrollLines(-1);
+        if (repeat&KEY_DOWN) scrollLines(1);
+        if (down&(KEY_L|KEY_LEFT)) scrollLines(-7);
+        if (down&(KEY_R|KEY_RIGHT)) scrollLines(7);
+        if (down&KEY_TOUCH) {
+            touchPosition touch;touchRead(&touch);
+            for (const auto& hit : hits) if (touch.px>=hit.x && touch.px<hit.x+hit.width && touch.py>=hit.y && touch.py<hit.y+hit.height) {
+                if (hit.command==Command::Back) back=true;
+                else if (hit.command==Command::RepairStorage) repair=true;
+                else if (hit.command==Command::Up) scrollLines(-1);
+                else if (hit.command==Command::Down) scrollLines(1);
+                break;
+            }
+        }
+        if (back) {state.lines.clear();go(Page::Menu);state.focus=4;render();return;}
+        if (repair && state.storageReady) {
+            state.storageWorking=true;state.storageWriting=true;
+            result=storage::repair(progress);show();
+        } else if (down || repeat) render();
+    }
+}
 void error(const std::string& detail,bool mismatch) {state.fatal=false;state.detail=detail;state.mismatch=mismatch;go(Page::Error);render();}
 [[noreturn]] void fatal(const std::string& detail) {
     state.fatal=true;state.detail=detail;state.mismatch=false;go(Page::Error);render();

@@ -472,5 +472,143 @@
     "key": "menu.change_card",
     "original": "Read another Game Card",
     "translation": "カードを読み直す"
+  },
+  {
+    "index": 80,
+    "key": "storage_repair.title",
+    "original": "Repair memory card",
+    "translation": "メモリーカード修復"
+  },
+  {
+    "index": 81,
+    "key": "storage_repair.confirm",
+    "original": "Repair",
+    "translation": "修復開始"
+  },
+  {
+    "index": 82,
+    "key": "storage_repair.notice",
+    "original": "Check the whole memory card. Repair synchronizes FAT copies and updates free space. Cross-linked files require a computer.",
+    "translation": "カード全体を検査します。修復では FAT のコピーを同期し、空き容量を更新します。交差リンクのあるファイルはパソコンで処理してください。"
+  },
+  {
+    "index": 83,
+    "key": "storage_repair.writing",
+    "original": "Backing up and repairing filesystem metadata. Keep the power on and leave the memory card inserted.",
+    "translation": "ファイルシステムの管理情報をバックアップして修復しています。電源を切ったり、カードを抜いたりしないでください。"
+  },
+  {
+    "index": 84,
+    "key": "storage_repair.stage.directories",
+    "original": "Checking directories (FAT {copy})",
+    "translation": "ディレクトリ検査（FAT {copy}）"
+  },
+  {
+    "index": 85,
+    "key": "storage_repair.stage.allocation",
+    "original": "Checking clusters (FAT {copy})",
+    "translation": "クラスタ検査（FAT {copy}）"
+  },
+  {
+    "index": 86,
+    "key": "storage_repair.stage.compare",
+    "original": "Comparing FAT copies",
+    "translation": "FAT コピーを比較中"
+  },
+  {
+    "index": 87,
+    "key": "storage_repair.stage.backup",
+    "original": "Backing up metadata",
+    "translation": "管理情報をバックアップ中"
+  },
+  {
+    "index": 88,
+    "key": "storage_repair.stage.repair",
+    "original": "Synchronizing FAT {copy}",
+    "translation": "FAT {copy} を同期中"
+  },
+  {
+    "index": 89,
+    "key": "storage_repair.stage.verify",
+    "original": "Verifying backup",
+    "translation": "バックアップを確認中"
+  },
+  {
+    "index": 90,
+    "key": "storage_repair.copy",
+    "original": "FAT {copy}: {files} entries\nConflicts: {conflicts}\nUnreferenced clusters: {lost}\nInvalid chains/directories: {invalid}",
+    "translation": "FAT {copy}：{files} 項目\n交差・循環：{conflicts}\n未参照クラスタ：{lost}\n無効なチェーン・目録：{invalid}"
+  },
+  {
+    "index": 91,
+    "key": "storage_repair.differences",
+    "original": "Different FAT sectors: {sectors}",
+    "translation": "FAT 差分セクタ：{sectors}"
+  },
+  {
+    "index": 92,
+    "key": "storage_repair.fsinfo",
+    "original": "Free-space information needs updating.",
+    "translation": "空き容量情報の更新が必要です。"
+  },
+  {
+    "index": 93,
+    "key": "storage_repair.clean",
+    "original": "No allocation problems found. No repair is needed.",
+    "translation": "割り当ての異常は見つかりませんでした。修復は不要です。"
+  },
+  {
+    "index": 94,
+    "key": "storage_repair.ready",
+    "original": "The active FAT passed the check. Press A to back up metadata and repair.",
+    "translation": "使用中の FAT は正常です。A を押すと管理情報をバックアップし、修復を開始します。"
+  },
+  {
+    "index": 95,
+    "key": "storage_repair.damaged",
+    "original": "The active FAT contains conflicting, lost or invalid chains. Back up the card on a computer and repair it there.",
+    "translation": "使用中の FAT に交差リンク、失われたチェーン、または無効なチェーンがあります。パソコンでカードをバックアップして修復してください。"
+  },
+  {
+    "index": 96,
+    "key": "storage_repair.ambiguous",
+    "original": "Both FAT copies describe valid but different chains. The correct copy cannot be determined. Use a computer to inspect the card.",
+    "translation": "両方の FAT は有効ですが、チェーンが異なるため正しいコピーを判定できません。パソコンでカードを検査してください。"
+  },
+  {
+    "index": 97,
+    "key": "storage_repair.unsupported",
+    "original": "This filesystem layout or read-only card cannot be repaired here.",
+    "translation": "このファイルシステムの構成、または読み取り専用カードの修復には対応していません。"
+  },
+  {
+    "index": 98,
+    "key": "storage_repair.busy",
+    "original": "A file is still open for writing. Close the operation before checking the card.",
+    "translation": "書き込み用に開かれたファイルがあります。処理を終了してから検査してください。"
+  },
+  {
+    "index": 99,
+    "key": "storage_repair.memory",
+    "original": "There is not enough memory to check this card. Use a computer.",
+    "translation": "このカードを検査するためのメモリが不足しています。パソコンを使用してください。"
+  },
+  {
+    "index": 100,
+    "key": "storage_repair.io_error",
+    "original": "Reading or writing failed, or FSInfo is invalid. The operation stopped. Check the card on a computer.",
+    "translation": "読み書きに失敗したか、FSInfo が無効です。処理を停止しました。パソコンでカードを検査してください。"
+  },
+  {
+    "index": 101,
+    "key": "storage_repair.repaired",
+    "original": "Repair completed. Allocation chains, FAT copies and free space were checked again.",
+    "translation": "修復が完了しました。割り当てチェーン、FAT のコピー、空き容量を再検査しました。"
+  },
+  {
+    "index": 102,
+    "key": "storage_repair.backup_path",
+    "original": "Metadata backup:\n{path}",
+    "translation": "管理情報のバックアップ：\n{path}"
   }
 ]

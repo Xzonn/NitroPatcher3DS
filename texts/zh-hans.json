@@ -472,5 +472,143 @@
     "key": "menu.change_card",
     "original": "Read another Game Card",
     "translation": "重新识别卡带"
+  },
+  {
+    "index": 80,
+    "key": "storage_repair.title",
+    "original": "Repair memory card",
+    "translation": "修复内存卡"
+  },
+  {
+    "index": 81,
+    "key": "storage_repair.confirm",
+    "original": "Repair",
+    "translation": "开始修复"
+  },
+  {
+    "index": 82,
+    "key": "storage_repair.notice",
+    "original": "Check the whole memory card. Repair synchronizes FAT copies and updates free space. Cross-linked files require a computer.",
+    "translation": "检查整张内存卡。修复会同步 FAT 副本并更新空闲容量。存在交叉链接的文件需要使用电脑处理。"
+  },
+  {
+    "index": 83,
+    "key": "storage_repair.writing",
+    "original": "Backing up and repairing filesystem metadata. Keep the power on and leave the memory card inserted.",
+    "translation": "正在备份和修复文件系统元数据。请保持电源开启，不要拔出内存卡。"
+  },
+  {
+    "index": 84,
+    "key": "storage_repair.stage.directories",
+    "original": "Checking directories (FAT {copy})",
+    "translation": "检查目录（FAT {copy}）"
+  },
+  {
+    "index": 85,
+    "key": "storage_repair.stage.allocation",
+    "original": "Checking clusters (FAT {copy})",
+    "translation": "检查分配链（FAT {copy}）"
+  },
+  {
+    "index": 86,
+    "key": "storage_repair.stage.compare",
+    "original": "Comparing FAT copies",
+    "translation": "比较 FAT 副本"
+  },
+  {
+    "index": 87,
+    "key": "storage_repair.stage.backup",
+    "original": "Backing up metadata",
+    "translation": "备份元数据"
+  },
+  {
+    "index": 88,
+    "key": "storage_repair.stage.repair",
+    "original": "Synchronizing FAT {copy}",
+    "translation": "同步 FAT {copy}"
+  },
+  {
+    "index": 89,
+    "key": "storage_repair.stage.verify",
+    "original": "Verifying backup",
+    "translation": "核对备份文件"
+  },
+  {
+    "index": 90,
+    "key": "storage_repair.copy",
+    "original": "FAT {copy}: {files} entries\nConflicts: {conflicts}\nUnreferenced clusters: {lost}\nInvalid chains/directories: {invalid}",
+    "translation": "FAT {copy}：{files} 个目录项\n交叉或循环：{conflicts}\n未引用的簇：{lost}\n无效分配链或目录：{invalid}"
+  },
+  {
+    "index": 91,
+    "key": "storage_repair.differences",
+    "original": "Different FAT sectors: {sectors}",
+    "translation": "FAT 差异扇区：{sectors}"
+  },
+  {
+    "index": 92,
+    "key": "storage_repair.fsinfo",
+    "original": "Free-space information needs updating.",
+    "translation": "空闲容量信息需要更新。"
+  },
+  {
+    "index": 93,
+    "key": "storage_repair.clean",
+    "original": "No allocation problems found. No repair is needed.",
+    "translation": "未发现分配异常，无需修复。"
+  },
+  {
+    "index": 94,
+    "key": "storage_repair.ready",
+    "original": "The active FAT passed the check. Press A to back up metadata and repair.",
+    "translation": "当前使用的 FAT 检查通过。按 A 备份元数据并开始修复。"
+  },
+  {
+    "index": 95,
+    "key": "storage_repair.damaged",
+    "original": "The active FAT contains conflicting, lost or invalid chains. Back up the card on a computer and repair it there.",
+    "translation": "当前使用的 FAT 存在交叉链接、遗失或无效的分配链。请使用电脑备份内存卡，再进行修复。"
+  },
+  {
+    "index": 96,
+    "key": "storage_repair.ambiguous",
+    "original": "Both FAT copies describe valid but different chains. The correct copy cannot be determined. Use a computer to inspect the card.",
+    "translation": "两份 FAT 分配链均有效，但内容不同，无法确定正确的副本。请使用电脑检查内存卡。"
+  },
+  {
+    "index": 97,
+    "key": "storage_repair.unsupported",
+    "original": "This filesystem layout or read-only card cannot be repaired here.",
+    "translation": "当前文件系统布局或只读内存卡不支持在此修复。"
+  },
+  {
+    "index": 98,
+    "key": "storage_repair.busy",
+    "original": "A file is still open for writing. Close the operation before checking the card.",
+    "translation": "仍有文件处于写入状态，请结束相关操作后再检查内存卡。"
+  },
+  {
+    "index": 99,
+    "key": "storage_repair.memory",
+    "original": "There is not enough memory to check this card. Use a computer.",
+    "translation": "可用内存不足以检查这张卡，请使用电脑处理。"
+  },
+  {
+    "index": 100,
+    "key": "storage_repair.io_error",
+    "original": "Reading or writing failed, or FSInfo is invalid. The operation stopped. Check the card on a computer.",
+    "translation": "读取、写入失败，或 FSInfo 无效。操作已停止，请使用电脑检查内存卡。"
+  },
+  {
+    "index": 101,
+    "key": "storage_repair.repaired",
+    "original": "Repair completed. Allocation chains, FAT copies and free space were checked again.",
+    "translation": "修复完成，已重新检查分配链、FAT 副本和空闲容量。"
+  },
+  {
+    "index": 102,
+    "key": "storage_repair.backup_path",
+    "original": "Metadata backup:\n{path}",
+    "translation": "元数据备份：\n{path}"
   }
 ]

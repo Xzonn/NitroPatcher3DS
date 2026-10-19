@@ -472,5 +472,143 @@
     "key": "menu.change_card",
     "original": "Read another Game Card",
     "translation": "Read another Game Card"
+  },
+  {
+    "index": 80,
+    "key": "storage_repair.title",
+    "original": "Repair memory card",
+    "translation": "Repair memory card"
+  },
+  {
+    "index": 81,
+    "key": "storage_repair.confirm",
+    "original": "Repair",
+    "translation": "Repair"
+  },
+  {
+    "index": 82,
+    "key": "storage_repair.notice",
+    "original": "Check the whole memory card. Repair synchronizes FAT copies and updates free space. Cross-linked files require a computer.",
+    "translation": "Check the whole memory card. Repair synchronizes FAT copies and updates free space. Cross-linked files require a computer."
+  },
+  {
+    "index": 83,
+    "key": "storage_repair.writing",
+    "original": "Backing up and repairing filesystem metadata. Keep the power on and leave the memory card inserted.",
+    "translation": "Backing up and repairing filesystem metadata. Keep the power on and leave the memory card inserted."
+  },
+  {
+    "index": 84,
+    "key": "storage_repair.stage.directories",
+    "original": "Checking directories (FAT {copy})",
+    "translation": "Checking directories (FAT {copy})"
+  },
+  {
+    "index": 85,
+    "key": "storage_repair.stage.allocation",
+    "original": "Checking clusters (FAT {copy})",
+    "translation": "Checking clusters (FAT {copy})"
+  },
+  {
+    "index": 86,
+    "key": "storage_repair.stage.compare",
+    "original": "Comparing FAT copies",
+    "translation": "Comparing FAT copies"
+  },
+  {
+    "index": 87,
+    "key": "storage_repair.stage.backup",
+    "original": "Backing up metadata",
+    "translation": "Backing up metadata"
+  },
+  {
+    "index": 88,
+    "key": "storage_repair.stage.repair",
+    "original": "Synchronizing FAT {copy}",
+    "translation": "Synchronizing FAT {copy}"
+  },
+  {
+    "index": 89,
+    "key": "storage_repair.stage.verify",
+    "original": "Verifying backup",
+    "translation": "Verifying backup"
+  },
+  {
+    "index": 90,
+    "key": "storage_repair.copy",
+    "original": "FAT {copy}: {files} entries\nConflicts: {conflicts}\nUnreferenced clusters: {lost}\nInvalid chains/directories: {invalid}",
+    "translation": "FAT {copy}: {files} entries\nConflicts: {conflicts}\nUnreferenced clusters: {lost}\nInvalid chains/directories: {invalid}"
+  },
+  {
+    "index": 91,
+    "key": "storage_repair.differences",
+    "original": "Different FAT sectors: {sectors}",
+    "translation": "Different FAT sectors: {sectors}"
+  },
+  {
+    "index": 92,
+    "key": "storage_repair.fsinfo",
+    "original": "Free-space information needs updating.",
+    "translation": "Free-space information needs updating."
+  },
+  {
+    "index": 93,
+    "key": "storage_repair.clean",
+    "original": "No allocation problems found. No repair is needed.",
+    "translation": "No allocation problems found. No repair is needed."
+  },
+  {
+    "index": 94,
+    "key": "storage_repair.ready",
+    "original": "The active FAT passed the check. Press A to back up metadata and repair.",
+    "translation": "The active FAT passed the check. Press A to back up metadata and repair."
+  },
+  {
+    "index": 95,
+    "key": "storage_repair.damaged",
+    "original": "The active FAT contains conflicting, lost or invalid chains. Back up the card on a computer and repair it there.",
+    "translation": "The active FAT contains conflicting, lost or invalid chains. Back up the card on a computer and repair it there."
+  },
+  {
+    "index": 96,
+    "key": "storage_repair.ambiguous",
+    "original": "Both FAT copies describe valid but different chains. The correct copy cannot be determined. Use a computer to inspect the card.",
+    "translation": "Both FAT copies describe valid but different chains. The correct copy cannot be determined. Use a computer to inspect the card."
+  },
+  {
+    "index": 97,
+    "key": "storage_repair.unsupported",
+    "original": "This filesystem layout or read-only card cannot be repaired here.",
+    "translation": "This filesystem layout or read-only card cannot be repaired here."
+  },
+  {
+    "index": 98,
+    "key": "storage_repair.busy",
+    "original": "A file is still open for writing. Close the operation before checking the card.",
+    "translation": "A file is still open for writing. Close the operation before checking the card."
+  },
+  {
+    "index": 99,
+    "key": "storage_repair.memory",
+    "original": "There is not enough memory to check this card. Use a computer.",
+    "translation": "There is not enough memory to check this card. Use a computer."
+  },
+  {
+    "index": 100,
+    "key": "storage_repair.io_error",
+    "original": "Reading or writing failed, or FSInfo is invalid. The operation stopped. Check the card on a computer.",
+    "translation": "Reading or writing failed, or FSInfo is invalid. The operation stopped. Check the card on a computer."
+  },
+  {
+    "index": 101,
+    "key": "storage_repair.repaired",
+    "original": "Repair completed. Allocation chains, FAT copies and free space were checked again.",
+    "translation": "Repair completed. Allocation chains, FAT copies and free space were checked again."
+  },
+  {
+    "index": 102,
+    "key": "storage_repair.backup_path",
+    "original": "Metadata backup:\n{path}",
+    "translation": "Metadata backup:\n{path}"
   }
 ]

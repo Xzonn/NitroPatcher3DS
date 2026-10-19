@@ -23,7 +23,13 @@ const char* const keys[] = {
     "prepare.stage.write_cache","prepare.stage.remove_temporary","prepare.stage.finish_cache","prepare.stage.check_cache","prepare.stage.check_game_data","prepare.stage.prepare_dsi",
     "prepare.stage.patch_sequence","launch.starting","language_selection.prompt","about.author","about.version","common.key_hint","common.item_counter","common.percentage",
     "prepare.file_counter","prepare.remaining","prepare.estimating","prepare.stage.launch_files","about.licenses",
-    "game_card.insert.title","game_card.insert.body","game_card.reinsert.body","game_card.read","menu.change_card"
+    "game_card.insert.title","game_card.insert.body","game_card.reinsert.body","game_card.read","menu.change_card",
+    "storage_repair.title","storage_repair.confirm","storage_repair.notice","storage_repair.writing",
+    "storage_repair.stage.directories","storage_repair.stage.allocation","storage_repair.stage.compare",
+    "storage_repair.stage.backup","storage_repair.stage.repair","storage_repair.stage.verify",
+    "storage_repair.copy","storage_repair.differences","storage_repair.fsinfo","storage_repair.clean",
+    "storage_repair.ready","storage_repair.damaged","storage_repair.ambiguous","storage_repair.unsupported",
+    "storage_repair.busy","storage_repair.memory","storage_repair.io_error","storage_repair.repaired","storage_repair.backup_path"
 };
 static_assert(sizeof(keys)/sizeof(keys[0])==int(Text::Count));
 using Json = std::unique_ptr<cJSON,decltype(&cJSON_Delete)>;

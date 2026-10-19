@@ -13,7 +13,11 @@ enum class Text {
     PatchDirectory, Extract, Preprocess, ReadDirectory, PrepareFiles, Arrange, Apply, Replace, WriteCache,
     RemoveTemporary, FinishCache, CheckCache, CheckData, PrepareDSi, Sequence, Launch, SelectLanguage,
     AboutAuthor, AboutVersion, KeyHint, Counter, Percentage, FileCounter, Remaining, Estimating, PrepareLaunch, Licenses,
-    InsertCard, ReadCardPrompt, ReinsertCardPrompt, IdentifyCard, ChangeCard, Count
+    InsertCard, ReadCardPrompt, ReinsertCardPrompt, IdentifyCard, ChangeCard,
+    StorageTitle, StorageConfirm, StorageNotice, StorageWriting, StorageDirectories, StorageAllocation,
+    StorageCompare, StorageBackup, StorageRepair, StorageVerify, StorageCopy, StorageDifferences,
+    StorageFsInfo, StorageClean, StorageReady, StorageDamaged, StorageAmbiguous, StorageUnsupported,
+    StorageBusy, StorageMemory, StorageIoError, StorageRepaired, StorageBackupPath, Count
 };
 extern int LanguageCount;
 extern std::vector<std::string> languageCodes;

@@ -99,6 +99,7 @@ int main() {
         if (action==ui::Action::Report) {
             ui::report(true);dumpEnvironment();ui::report(false);continue;
         }
+        if (action==ui::Action::RepairStorage) {ui::repairStorage();continue;}
         if (action==ui::Action::ChangeCard) {
             persistentCard.reset();persistentChipId=0;hasCard=false;reinsert=true;
             ui::noCard(false,true);continue;

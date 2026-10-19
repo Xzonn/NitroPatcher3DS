@@ -472,5 +472,143 @@
     "key": "menu.change_card",
     "original": "Read another Game Card",
     "translation": "카드 다시 읽기"
+  },
+  {
+    "index": 80,
+    "key": "storage_repair.title",
+    "original": "Repair memory card",
+    "translation": "메모리 카드 복구"
+  },
+  {
+    "index": 81,
+    "key": "storage_repair.confirm",
+    "original": "Repair",
+    "translation": "복구 시작"
+  },
+  {
+    "index": 82,
+    "key": "storage_repair.notice",
+    "original": "Check the whole memory card. Repair synchronizes FAT copies and updates free space. Cross-linked files require a computer.",
+    "translation": "메모리 카드 전체를 검사합니다. FAT 복사본을 동기화하고 여유 공간 정보를 갱신합니다. 교차 연결된 파일은 컴퓨터에서 처리해야 합니다."
+  },
+  {
+    "index": 83,
+    "key": "storage_repair.writing",
+    "original": "Backing up and repairing filesystem metadata. Keep the power on and leave the memory card inserted.",
+    "translation": "파일 시스템 메타데이터를 백업하고 복구하는 중입니다. 전원을 끄거나 메모리 카드를 빼지 마세요."
+  },
+  {
+    "index": 84,
+    "key": "storage_repair.stage.directories",
+    "original": "Checking directories (FAT {copy})",
+    "translation": "폴더 검사 중 (FAT {copy})"
+  },
+  {
+    "index": 85,
+    "key": "storage_repair.stage.allocation",
+    "original": "Checking clusters (FAT {copy})",
+    "translation": "클러스터 검사 중 (FAT {copy})"
+  },
+  {
+    "index": 86,
+    "key": "storage_repair.stage.compare",
+    "original": "Comparing FAT copies",
+    "translation": "FAT 복사본 비교 중"
+  },
+  {
+    "index": 87,
+    "key": "storage_repair.stage.backup",
+    "original": "Backing up metadata",
+    "translation": "메타데이터 백업 중"
+  },
+  {
+    "index": 88,
+    "key": "storage_repair.stage.repair",
+    "original": "Synchronizing FAT {copy}",
+    "translation": "FAT {copy} 동기화 중"
+  },
+  {
+    "index": 89,
+    "key": "storage_repair.stage.verify",
+    "original": "Verifying backup",
+    "translation": "백업 파일 확인 중"
+  },
+  {
+    "index": 90,
+    "key": "storage_repair.copy",
+    "original": "FAT {copy}: {files} entries\nConflicts: {conflicts}\nUnreferenced clusters: {lost}\nInvalid chains/directories: {invalid}",
+    "translation": "FAT {copy}: 항목 {files}개\n교차 또는 순환: {conflicts}\n참조 없는 클러스터: {lost}\n잘못된 체인 또는 폴더: {invalid}"
+  },
+  {
+    "index": 91,
+    "key": "storage_repair.differences",
+    "original": "Different FAT sectors: {sectors}",
+    "translation": "서로 다른 FAT 섹터: {sectors}"
+  },
+  {
+    "index": 92,
+    "key": "storage_repair.fsinfo",
+    "original": "Free-space information needs updating.",
+    "translation": "여유 공간 정보를 갱신해야 합니다."
+  },
+  {
+    "index": 93,
+    "key": "storage_repair.clean",
+    "original": "No allocation problems found. No repair is needed.",
+    "translation": "할당 문제를 발견하지 못했습니다. 복구할 필요가 없습니다."
+  },
+  {
+    "index": 94,
+    "key": "storage_repair.ready",
+    "original": "The active FAT passed the check. Press A to back up metadata and repair.",
+    "translation": "사용 중인 FAT가 검사를 통과했습니다. A를 누르면 메타데이터를 백업하고 복구합니다."
+  },
+  {
+    "index": 95,
+    "key": "storage_repair.damaged",
+    "original": "The active FAT contains conflicting, lost or invalid chains. Back up the card on a computer and repair it there.",
+    "translation": "사용 중인 FAT에 교차 연결, 유실되거나 잘못된 체인이 있습니다. 컴퓨터에서 카드를 백업한 후 복구하세요."
+  },
+  {
+    "index": 96,
+    "key": "storage_repair.ambiguous",
+    "original": "Both FAT copies describe valid but different chains. The correct copy cannot be determined. Use a computer to inspect the card.",
+    "translation": "두 FAT의 체인이 모두 유효하지만 서로 달라 올바른 복사본을 결정할 수 없습니다. 컴퓨터에서 카드를 검사하세요."
+  },
+  {
+    "index": 97,
+    "key": "storage_repair.unsupported",
+    "original": "This filesystem layout or read-only card cannot be repaired here.",
+    "translation": "이 파일 시스템 구조 또는 읽기 전용 카드는 여기서 복구할 수 없습니다."
+  },
+  {
+    "index": 98,
+    "key": "storage_repair.busy",
+    "original": "A file is still open for writing. Close the operation before checking the card.",
+    "translation": "쓰기용으로 열린 파일이 있습니다. 해당 작업을 종료한 후 카드를 검사하세요."
+  },
+  {
+    "index": 99,
+    "key": "storage_repair.memory",
+    "original": "There is not enough memory to check this card. Use a computer.",
+    "translation": "이 카드를 검사할 메모리가 부족합니다. 컴퓨터를 사용하세요."
+  },
+  {
+    "index": 100,
+    "key": "storage_repair.io_error",
+    "original": "Reading or writing failed, or FSInfo is invalid. The operation stopped. Check the card on a computer.",
+    "translation": "읽기나 쓰기에 실패했거나 FSInfo가 유효하지 않습니다. 작업을 중단했습니다. 컴퓨터에서 카드를 검사하세요."
+  },
+  {
+    "index": 101,
+    "key": "storage_repair.repaired",
+    "original": "Repair completed. Allocation chains, FAT copies and free space were checked again.",
+    "translation": "복구를 완료했습니다. 할당 체인, FAT 복사본과 여유 공간을 다시 검사했습니다."
+  },
+  {
+    "index": 102,
+    "key": "storage_repair.backup_path",
+    "original": "Metadata backup:\n{path}",
+    "translation": "메타데이터 백업:\n{path}"
   }
 ]
