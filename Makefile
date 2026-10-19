@@ -1,10 +1,11 @@
-.PHONY: all launcher launcher-slot2 bootstrap verify patch-arm9 host
+.PHONY: all launcher launcher-slot2 bootstrap verify patch-arm9 host libfat
 
 export DIAGNOSTIC ?= 0
 export LAUNCH_TRACE ?= 0
 export PREPARE_TRACE ?= 0
 export SLOT2 ?= 0
 export NP3D_VERSION := $(shell git describe --always --dirty)
+export NP3D_LIBFAT := $(CURDIR)/vendor/libfat/nds/lib/libfat.a
 
 all: launcher launcher-slot2
 
@@ -13,6 +14,9 @@ patch-arm9:
 
 host:
 	$(MAKE) -C source/patch MODE=host
+
+libfat:
+	$(MAKE) -C vendor/libfat nds-release
 
 launcher: patch-arm9 bootstrap
 	mkdir -p build
@@ -42,7 +46,7 @@ launcher-slot2: launcher
 	cp vendor/TWiLightMenu/slot1launch/slot1launch.arm9.elf out/NitroPatcherNDS.arm9.elf
 	cp vendor/TWiLightMenu/slot1launch/slot1launch.arm7.elf out/NitroPatcherNDS.arm7.elf
 
-bootstrap: build/lzss
+bootstrap: build/lzss libfat
 	printf '%s\n' "$(LAUNCH_TRACE)" > build/bootstrap-mode.next
 	if ! cmp -s build/bootstrap-mode.next build/bootstrap-mode; then for directory in arm9 bootloader bootloader2 bootloaderi bootloaderi2 cardenginei/arm7 cardenginei/arm7_alt cardenginei/arm7_twlsdk cardenginei/arm7_twlsdk3; do $(MAKE) -C vendor/nds-bootstrap/retail/$$directory clean || exit $$?; done; fi
 	mv build/bootstrap-mode.next build/bootstrap-mode

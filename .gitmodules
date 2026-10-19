@@ -28,3 +28,6 @@
 [submodule "vendor/fmt"]
 	path = vendor/fmt
 	url = https://github.com/fmtlib/fmt.git
+[submodule "vendor/libfat"]
+	path = vendor/libfat
+	url = https://github.com/Xzonn/libfat.git
