@@ -10,7 +10,7 @@ class TwlHasher {
 public:
     TwlHasher();
     ~TwlHasher();
-    std::array<uint8_t, 20> operator()(SourcePtr input, uint32_t offset, uint32_t length);
+    std::array<uint8_t, 20> operator()(SourcePtr input, uint32_t offset, uint32_t length, const char* detail = nullptr);
 };
 SourcePtr twlCrypt(Workspace& work, SourcePtr input, uint32_t offset, uint32_t length,
     const Header& header, const uint8_t* counter);

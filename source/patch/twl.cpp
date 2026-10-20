@@ -27,16 +27,18 @@ TwlHasher::TwlHasher() : state(std::make_unique<State>()) {
 
 TwlHasher::~TwlHasher() { mbedtls_md_free(&state->context); }
 
-std::array<uint8_t, 20> TwlHasher::operator()(SourcePtr input, uint32_t offset, uint32_t length) {
+std::array<uint8_t, 20> TwlHasher::operator()(SourcePtr input, uint32_t offset, uint32_t length, const char* detail) {
     auto& context = state->context;
     auto& buffer = state->buffer;
     buffer.resize(std::min(BufferSize, std::max<uint32_t>(length, 1)));
     require(mbedtls_md_hmac_reset(&context) == 0, "Cannot reset TWL HMAC");
+    if (detail) progress("Checking DSi data", 0, length, true, detail);
     for (uint32_t position = 0; position < length;) {
         uint32_t take = std::min<uint32_t>(buffer.size(), length - position);
         input->read(offset + position, buffer.data(), take);
         require(mbedtls_md_hmac_update(&context, buffer.data(), take) == 0, "Cannot update TWL HMAC");
         position += take;
+        if (detail) progress("Checking DSi data", position, length, true, detail);
     }
     std::array<uint8_t, 20> result;
     require(mbedtls_md_hmac_finish(&context, result.data()) == 0, "Cannot finish TWL HMAC");

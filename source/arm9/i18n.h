@@ -17,7 +17,7 @@ enum class Text {
     StorageTitle, StorageConfirm, StorageNotice, StorageWriting, StorageDirectories, StorageAllocation,
     StorageCompare, StorageBackup, StorageRepair, StorageVerify, StorageCopy, StorageDifferences,
     StorageFsInfo, StorageClean, StorageReady, StorageDamaged, StorageAmbiguous, StorageUnsupported,
-    StorageBusy, StorageMemory, StorageIoError, StorageRepaired, StorageBackupPath, Count
+    StorageBusy, StorageMemory, StorageIoError, StorageRepaired, StorageBackupPath, CheckDSiData, DSiModeRequired, Count
 };
 extern int LanguageCount;
 extern std::vector<std::string> languageCodes;

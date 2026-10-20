@@ -21,7 +21,7 @@ static std::string overlayPath(unsigned int cpu, uint32_t id) {
 }
 
 static std::vector<OverlayEntry> readOverlays(SourcePtr data) {
-    require(data->size % sizeof(OverlayEntry) == 0, "Invalid replacement overlay table");
+    patchRequire(data->size % sizeof(OverlayEntry) == 0, "Invalid replacement overlay table");
     std::vector<OverlayEntry> table;
     for (uint32_t position = 0; position < data->size; position += sizeof(OverlayEntry)) {
         OverlayEntry item;
@@ -40,27 +40,27 @@ static uint32_t addNamedFile(std::vector<NamedFile>& names, std::vector<NamedDir
         if (end == std::string::npos) break;
         first = end + 1;
     }
-    require(parts.size() >= 2 && normalize(parts.front()) == "data", "Invalid NitroFS path: " + path);
-    require(parts.size() <= 258, "FNT directory depth exceeds 256");
+    patchRequire(parts.size() >= 2 && normalize(parts.front()) == "data", "Invalid NitroFS path: " + path);
+    patchRequire(parts.size() <= 258, "FNT directory depth exceeds 256");
     uint32_t parent = 0;
     std::string output = "data";
     for (size_t index = 1; index < parts.size(); index++) {
         const auto& name = parts[index];
-        require(!name.empty() && name != "." && name != ".." && name.find('\0') == std::string::npos, "Invalid NitroFS path: " + path);
+        patchRequire(!name.empty() && name != "." && name != ".." && name.find('\0') == std::string::npos, "Invalid NitroFS path: " + path);
         std::string key = normalize(name);
         for (auto file : directories[parent].files)
-            require(normalize(decodeName(names[file].rawName)) != key, "ROM path conflicts with a file: " + path);
+            patchRequire(normalize(decodeName(names[file].rawName)) != key, "ROM path conflicts with a file: " + path);
         uint32_t child = UINT32_MAX;
         for (auto folder : directories[parent].children) if (normalize(directories[folder].name) == key) { child = folder; break; }
         if (index + 1 == parts.size()) {
-            require(child == UINT32_MAX, "ROM path conflicts with a directory: " + path);
+            patchRequire(child == UINT32_MAX, "ROM path conflicts with a directory: " + path);
             uint32_t file = names.size();
             names.push_back({output + "/" + name, UINT32_MAX, 0, 0, encodeName(name), parent});
             directories[parent].files.push_back(file);
             return file;
         }
         if (child == UINT32_MAX) {
-            require(directories.size() < 4096, "FNT directory count exceeds 4096");
+            patchRequire(directories.size() < 4096, "FNT directory count exceeds 4096");
             child = directories.size();
             auto raw = encodeName(name);
             directories.push_back({name, raw, parent, {}, {}});
@@ -111,7 +111,7 @@ static SourcePtr layoutFiles(Workspace& work, SourcePtr input, std::vector<RomFi
         for (auto file : folder.files) order.push_back(positions[file]);
         for (auto child = folder.children.rbegin(); child != folder.children.rend(); child++) pending.push_back(*child);
     }
-    require(order.size() <= 0xf000, "Filesystem file IDs exceed 0xEFFF");
+    patchRequire(order.size() <= 0xf000, "Filesystem file IDs exceed 0xEFFF");
     oldIds.assign(allocations.size(), UINT32_MAX);
     for (uint32_t id = 0; id < order.size(); id++) {
         uint32_t old = files[order[id]].id;
@@ -223,7 +223,7 @@ static std::shared_ptr<Map> buildCompleteRom(Workspace& work, SourcePtr input, P
     std::vector<SourcePtr> signedOverlays;
     for (auto& entry : tables[0]) if (uint32_t(entry.reserved) & 0x2000000) signedOverlays.push_back(system(overlayPath(9, entry.id)).data);
     arm9 = twl.updateOverlays(arm9, h, nitrocode, signedOverlays, patched("arm9.bin"));
-    require(arm9->size >= 0x4000 + (nitrocode ? 12 : 0), "ARM9 secure area is truncated");
+    patchRequire(arm9->size >= 0x4000 + (nitrocode ? 12 : 0), "ARM9 secure area is truncated");
     h.arm9_size = arm9->size - (nitrocode ? 12 : 0);
     auto secure = readBytes(arm9, 0, 0x4000);
     uint32_t code;
@@ -308,14 +308,14 @@ static std::shared_ptr<Map> buildCompleteRom(Workspace& work, SourcePtr input, P
     return twl.serialize(h, std::move(headerData), sections, changed, decrypted);
 }
 
-std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package) {
+static std::shared_ptr<Map> buildRomInput(Workspace& work, SourcePtr input, Package& package) {
     require(input->size >= 512, "NDS header is truncated");
     auto headerStorage = std::make_unique<Header>();
     Header& h = *headerStorage;
     std::memset(&h, 0, sizeof(h));
     input->read(0, &h, std::min<uint32_t>(input->size, sizeof(h)));
     bool format2 = package.metadata.formatVersion == 2;
-    if (format2) require(h.unitcode == 0 || h.unitcode == 2, "Unsupported ROM unit code for XZP format 2");
+    if (format2) patchRequire(h.unitcode == 0 || h.unitcode == 2, "Unsupported ROM unit code for XZP format 2");
     uint32_t headerSize = h.rom_header_size;
     require(headerSize >= 0x170 && headerSize <= input->size, "Invalid NDS header size");
     if (h.unitcode & 2) require(headerSize >= 0x1000, "DSi header is truncated");
@@ -394,13 +394,13 @@ std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package
         files.push_back({"arm7i.bin", 0xffff, twl->program(3), 0xffff, h.dsi7_rom_offset, h.dsi7_size});
     }
     std::set<std::string> unique;
-    for (const auto& file : files) require(unique.insert(normalize(file.name)).second, "Duplicate ROM path: " + file.name);
+    for (const auto& file : files) patchRequire(unique.insert(normalize(file.name)).second, "Duplicate ROM path: " + file.name);
     std::vector<std::pair<std::string, std::string>> additions;
     if (format2) {
         for (const auto& folder : directories) {
             std::set<std::string> children;
-            for (auto file : folder.files) require(children.insert(normalize(decodeName(names[file].rawName))).second, "Duplicate FNT path");
-            for (auto child : folder.children) require(children.insert(normalize(directories[child].name)).second, "Duplicate FNT path");
+            for (auto file : folder.files) patchRequire(children.insert(normalize(decodeName(names[file].rawName))).second, "Duplicate FNT path");
+            for (auto child : folder.children) patchRequire(children.insert(normalize(directories[child].name)).second, "Duplicate FNT path");
         }
         for (const auto& item : package.entries) {
             bool delta = item.first.compare(0, 7, "xdelta/") == 0;
@@ -410,7 +410,7 @@ std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package
             additions.push_back({delta ? item.second.name.substr(7) : item.second.name, target});
         }
         std::sort(additions.begin(), additions.end());
-        require(additions.empty() || (!package.has("fnt.bin") && !package.has("xdelta/fnt.bin")), "Adding files conflicts with an fnt.bin replacement");
+        patchRequire(additions.empty() || (!package.has("fnt.bin") && !package.has("xdelta/fnt.bin")), "Adding files conflicts with an fnt.bin replacement");
     }
     uint32_t completed = 0;
     uint32_t fileCount = files.size() + additions.size();
@@ -451,11 +451,11 @@ std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package
                 syntax = parsed.ec == std::errc() && parsed.ptr == end && overlayId != UINT32_MAX;
             }
             cpu = arm7 ? 7 : 9;
-            require(syntax && overlayPath(cpu, overlayId) == path, "Invalid overlay path: " + addition.first);
+            patchRequire(syntax && overlayPath(cpu, overlayId) == path, "Invalid overlay path: " + addition.first);
             std::string tableName = cpu == 9 ? "overarm9.bin" : "overarm7.bin";
-            require(unique.count(tableName), "New overlay requires " + tableName + ": " + addition.first);
+            patchRequire(unique.count(tableName), "New overlay requires " + tableName + ": " + addition.first);
             auto& table = overlayTables[cpu == 9 ? 0 : 1];
-            require(std::any_of(table.begin(), table.end(), [&](OverlayEntry& item) { return item.id == overlayId; }),
+            patchRequire(std::any_of(table.begin(), table.end(), [&](OverlayEntry& item) { return item.id == overlayId; }),
                 "New overlay is missing its table entry: " + addition.first);
         } else file = addNamedFile(names, directories, addition.first);
         progress("Preparing game files", completed, fileCount, false, addition.first.c_str());
@@ -471,10 +471,10 @@ std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package
         size_t index = cpu == 9 ? 0 : 1;
         std::set<uint32_t> ids;
         for (auto& item : overlayTables[index]) {
-            require(ids.insert(item.id).second, "Duplicate overlay ID: " + std::to_string(uint32_t(item.id)));
-            require(unique.count(overlayPath(cpu, item.id)), "Overlay table entry has no payload: " + overlayPath(cpu, item.id));
+            patchRequire(ids.insert(item.id).second, "Duplicate overlay ID: " + std::to_string(uint32_t(item.id)));
+            patchRequire(unique.count(overlayPath(cpu, item.id)), "Overlay table entry has no payload: " + overlayPath(cpu, item.id));
         }
-        for (auto id : originalOverlays[index]) require(ids.count(id), "Removing overlays is unsupported");
+        for (auto id : originalOverlays[index]) patchRequire(ids.count(id), "Removing overlays is unsupported");
     }
     if (twl && identical) {
         auto output = work.map();
@@ -498,10 +498,10 @@ std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package
         for (const auto& item : newNames) after.push_back(item.id);
         std::sort(before.begin(), before.end());
         std::sort(after.begin(), after.end());
-        require(before == after, "Replacement FNT must preserve existing file IDs");
+        patchRequire(before == after, "Replacement FNT must preserve existing file IDs");
     }
     bool changed = !additions.empty() || addedTable;
-    require(!changed || (!package.has("fnt.bin") && !package.has("xdelta/fnt.bin")), "Adding files conflicts with an fnt.bin replacement");
+    patchRequire(!changed || (!package.has("fnt.bin") && !package.has("xdelta/fnt.bin")), "Adding files conflicts with an fnt.bin replacement");
     std::vector<uint32_t> layout, oldIds;
     if (changed) {
         std::sort(newOverlayFiles.begin(), newOverlayFiles.end());
@@ -519,12 +519,12 @@ std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package
         auto replacementStorage = std::make_unique<Header>();
         Header& replacement = *replacementStorage;
         auto data = system("header.bin");
-        require(data->size >= 0x170, "Replacement header is truncated");
+        patchRequire(data->size >= 0x170, "Replacement header is truncated");
         data->read(0, &replacement, std::min<uint32_t>(sizeof(replacement), data->size));
-        require(uint32_t(replacement.rom_header_size) >= 0x170 && replacement.rom_header_size <= data->size,
+        patchRequire(uint32_t(replacement.rom_header_size) >= 0x170 && replacement.rom_header_size <= data->size,
             "Invalid replacement header size");
         if (twl) {
-            require(data->size >= sizeof(Header) && replacement.unitcode == 2 && replacement.tid_high == h.tid_high
+            patchRequire(data->size >= sizeof(Header) && replacement.unitcode == 2 && replacement.tid_high == h.tid_high
                 && replacement.tid_low == h.tid_low && (!h.dsi9_size || replacement.dsi9_size) && (!h.dsi7_size || replacement.dsi7_size),
                 "Replacement header changes or clears the DSi cartridge identity or programs");
             auto original = std::make_unique<Header>(h);
@@ -673,6 +673,17 @@ std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package
     output->append(Kind::Fill, 255, capacity - output->size);
     output->finish();
     return output;
+}
+
+std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package) {
+    try {
+        return buildRomInput(work, input, package);
+    } catch (const PatchError& error) {
+        work.error = error.message;
+    } catch (const std::bad_alloc&) {
+        work.error = "Not enough memory to prepare this patch";
+    }
+    return nullptr;
 }
 
 }

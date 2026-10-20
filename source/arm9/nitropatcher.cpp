@@ -178,6 +178,9 @@ int main(int argc,char** argv) {
         }
         if ((action==ui::Action::Launch && !ui::selectedPatches().empty()) || !isDSiMode()) {
             auto paths=action==ui::Action::Launch?ui::selectedPatches():std::vector<std::string>();
+            if (!isDSiMode() && gameHeader->unitCode==2 && !paths.empty()) {
+                ui::error(ui::tr(ui::Text::DSiModeRequired));continue;
+            }
             std::string description;
             for (const auto& path : paths) {if (!description.empty()) description+=" -> ";description+=path;}
             np3d::beginPreparationLog("sd:/nitro-patcher",description);

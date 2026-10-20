@@ -610,5 +610,17 @@
     "key": "storage_repair.backup_path",
     "original": "Metadata backup:\n{path}",
     "translation": "Metadata backup:\n{path}"
+  },
+  {
+    "index": 103,
+    "key": "prepare.stage.check_dsi_data",
+    "original": "Checking DSi program data",
+    "translation": "Checking DSi program data"
+  },
+  {
+    "index": 104,
+    "key": "patch_error.dsi_mode_required",
+    "original": "Preparing patches for this DSi-enhanced cartridge requires DSi mode. Use a 3DS or DSi.",
+    "translation": "Preparing patches for this DSi-enhanced cartridge requires DSi mode. Use a 3DS or DSi."
   }
 ]

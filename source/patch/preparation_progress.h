@@ -19,7 +19,7 @@ struct PreparationPlan {
     PreparationWork aggregate;
     size_t patch = 0, hash = 0, nextHash = 0;
     uint32_t windowCompleted = 0, windowTotal = 0;
-    uint64_t windowBase = 0;
+    uint64_t windowBase = 0, dsiBase = 0;
     std::string windowName;
     PreparationWork* windowWork = nullptr;
     bool ready = false, cardRead = false, dsi = false;

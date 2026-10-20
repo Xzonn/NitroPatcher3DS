@@ -29,7 +29,7 @@ const char* const keys[] = {
     "storage_repair.stage.backup","storage_repair.stage.repair","storage_repair.stage.verify",
     "storage_repair.copy","storage_repair.differences","storage_repair.fsinfo","storage_repair.clean",
     "storage_repair.ready","storage_repair.damaged","storage_repair.ambiguous","storage_repair.unsupported",
-    "storage_repair.busy","storage_repair.memory","storage_repair.io_error","storage_repair.repaired","storage_repair.backup_path"
+    "storage_repair.busy","storage_repair.memory","storage_repair.io_error","storage_repair.repaired","storage_repair.backup_path","prepare.stage.check_dsi_data","patch_error.dsi_mode_required"
 };
 static_assert(sizeof(keys)/sizeof(keys[0])==int(Text::Count));
 using Json = std::unique_ptr<cJSON,decltype(&cJSON_Delete)>;
@@ -86,7 +86,7 @@ const char* progressText(const char* stage) {
         {"Applying patch section",Text::Apply}, {"Applying replacement",Text::Replace},
         {"Writing cache",Text::WriteCache}, {"Removing temporary files",Text::RemoveTemporary},
         {"Finishing cache",Text::FinishCache}, {"Checking cache",Text::CheckCache},
-        {"Checking game data",Text::CheckData}, {"Preparing DSi files",Text::PrepareDSi},
+        {"Checking game data",Text::CheckData}, {"Preparing DSi files",Text::PrepareDSi}, {"Checking DSi data",Text::CheckDSiData},
         {"Patch sequence",Text::Sequence}, {"Patch cache reused",Text::Reused}, {"Patch cache prepared",Text::FinishCache},
         {"Using prepared cache",Text::Reused}, {"Preparing launch files",Text::PrepareLaunch}
     };

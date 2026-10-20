@@ -610,5 +610,17 @@
     "key": "storage_repair.backup_path",
     "original": "Metadata backup:\n{path}",
     "translation": "管理情報のバックアップ：\n{path}"
+  },
+  {
+    "index": 103,
+    "key": "prepare.stage.check_dsi_data",
+    "original": "Checking DSi program data",
+    "translation": "DSi プログラムデータを確認中"
+  },
+  {
+    "index": 104,
+    "key": "patch_error.dsi_mode_required",
+    "original": "Preparing patches for this DSi-enhanced cartridge requires DSi mode. Use a 3DS or DSi.",
+    "translation": "この DSi 対応カードのパッチ準備には DSi モードが必要です。3DS または DSi を使用してください。"
   }
 ]

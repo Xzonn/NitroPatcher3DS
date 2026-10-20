@@ -1,5 +1,6 @@
 #include "preparation_progress.h"
 #include "nds_adapter.h"
+#include "package.h"
 #include "miniz.h"
 #include <cstring>
 #include <string_view>
@@ -31,6 +32,7 @@ void PreparationPlan::initialize(SourcePtr source,const std::vector<std::string>
     sizes["arm9.bin"]=uint32_t(header->arm9_size)+12;sizes["arm7.bin"]=header->arm7_size;
     sizes["fnt.bin"]=header->fnt_size;sizes["fat.bin"]=header->fat_size;
     sizes["overarm9.bin"]=header->arm9_overlay_size;sizes["overarm7.bin"]=header->arm7_overlay_size;
+    sizes["arm9i.bin"]=header->dsi9_size;sizes["arm7i.bin"]=header->dsi7_size;
     uint64_t fileCount=uint32_t(header->fat_size)/8+8+uint32_t(header->arm9_overlay_size)/sizeof(OverlayEntry)
         +uint32_t(header->arm7_overlay_size)/sizeof(OverlayEntry);
     for (const auto& path : paths) {
@@ -43,17 +45,16 @@ void PreparationPlan::initialize(SourcePtr source,const std::vector<std::string>
             continue;
         }
         item.files.size=item.layout.size=fileCount;
-        if ((header->unitcode&2) && (header->dsi_flags&1)) item.dsi.size=source->size;
-        auto archive=std::make_unique<mz_zip_archive>();*archive={};
-        require(mz_zip_reader_init_file(archive.get(),path.c_str(),0),"Cannot open XZP archive");
-        for (unsigned int index=0;index<mz_zip_reader_get_num_files(archive.get());index++) {
+        Package package(path);
+        if (patches.size()>1 && package.needsMd5()) item.verify.size=source->size;
+        if (package.metadata.formatVersion==2 && header->unitcode==2)
+            item.dsi.size=uint64_t(header->digest_ntr_size)+uint32_t(header->digest_twl_size)
+                +uint64_t(header->arm9_size)*2+uint32_t(header->arm7_size)
+                +uint64_t(header->dsi9_size)*5+uint64_t(header->dsi7_size)*5+uint32_t(header->banner_size);
+        for (const auto& member : package.entries) {
             mz_zip_archive_file_stat info;
-            require(mz_zip_reader_file_stat(archive.get(),index,&info),"Cannot read XZP directory");
-            if (info.m_is_directory) continue;
-            std::string name(info.m_full_filename,info.m_full_filename_size);
-            if (std::any_of(name.begin(),name.end(),[](unsigned char byte){return byte>=128;}))
-                name=convert(name,info.m_filename_utf8?"UTF-8":"CP437");
-            name=normalize(name);
+            require(mz_zip_reader_file_stat(&package.archive,member.second.index,&info),"Cannot read XZP directory");
+            const auto& name=member.first;
             if (name=="readme.md" || name=="readme.txt") continue;
             item.extraction[name].size=info.m_uncomp_size;
             if (name.compare(0,7,"xdelta/")==0) {
@@ -65,7 +66,6 @@ void PreparationPlan::initialize(SourcePtr source,const std::vector<std::string>
                 item.application[name].size=info.m_uncomp_size;cache.size+=info.m_uncomp_size;
             }
         }
-        require(mz_zip_reader_end(archive.get()),"Cannot close XZP archive");
     }
     auto add=[&](const PreparationWork& task){aggregate.size+=task.size;aggregate.completed+=task.completed;};
     for (const auto* task : {&card,&cache,&check,&launch,&finish}) add(*task);
@@ -101,7 +101,7 @@ void PreparationPlan::update(const char* stage,uint32_t completed,uint32_t total
         update(patches.at(hash).hash);
     } else if (name=="Patch sequence") {
         if (completed>1) finishPatch();
-        patch=completed-1;dsi=false;windowName.clear();windowBase=0;
+        patch=completed-1;dsi=false;windowName.clear();windowBase=dsiBase=0;
     } else if (name=="Using prepared cache") {
         for (patch=0;patch<patches.size();patch++) finishPatch();
         patch=patches.size()-1;set(cache,0,0);
@@ -124,8 +124,12 @@ void PreparationPlan::update(const char* stage,uint32_t completed,uint32_t total
             auto& task=patches[patch].layout;set(task,task.size,std::min(task.size,task.completed+1));
         }
     } else if (name=="Preparing DSi files") dsi=true;
-    else if (name=="Checking game data") {
-        auto& task=dsi?patches[patch].dsi:patches[patch].verify;set(task,total,completed);
+    else if (name=="Checking DSi data" || (name=="Checking game data" && dsi)) {
+        auto& task=patches[patch].dsi;
+        if (!completed) dsiBase=task.completed;
+        set(task,std::max(task.size,dsiBase+total),dsiBase+completed);
+    } else if (name=="Checking game data") {
+        set(patches[patch].verify,total,completed);
     } else if (name=="Writing cache") {finishPatch();update(cache);}
     else if (name=="Preparing launch files") set(launch,total,completed);
     else if (name=="Patch cache reused" || name=="Patch cache prepared") {

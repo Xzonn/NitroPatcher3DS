@@ -15,9 +15,9 @@ struct Bytes final : Source {
 };
 
 uint32_t align(uint64_t value, uint32_t alignment) {
-    require(alignment && value <= 0x40000000, "DSi output exceeds size limit");
+    patchRequire(alignment && value <= 0x40000000, "DSi output exceeds size limit");
     uint64_t result = (value + alignment - 1) / alignment * alignment;
-    require(result <= 0x40000000, "DSi output exceeds size limit");
+    patchRequire(result <= 0x40000000, "DSi output exceeds size limit");
     return result;
 }
 unsigned_int& offset(Header& h, unsigned int index) {
@@ -82,50 +82,51 @@ bool equalSources(SourcePtr first, SourcePtr second) {
 CompleteTwl::CompleteTwl(Workspace& workspace, SourcePtr source, Header& header, const std::vector<SourcePtr>& overlays)
     : work(workspace), input(source), originalHeader(std::make_unique<Header>(header)), overlaySources(overlays) {
     Header& h = *originalHeader;
-    require(h.unitcode == 2 && (!h.tid_high || h.tid_high == 0x30000), "Complete DSi processing requires a DSi-enhanced cartridge");
-    require(h.dsi9_ram_address && h.dsi9_ram_address != 0xffffffff && h.dsi7_ram_address && h.dsi7_ram_address != 0xffffffff,
+    patchRequire(h.unitcode == 2 && (!h.tid_high || h.tid_high == 0x30000), "Complete DSi processing requires a DSi-enhanced cartridge");
+    patchRequire(h.dsi9_ram_address && h.dsi9_ram_address != 0xffffffff && h.dsi7_ram_address && h.dsi7_ram_address != 0xffffffff,
         "Missing DSi program load address");
     digests = h.digest_ntr_start || h.digest_ntr_size || h.digest_twl_start || h.digest_twl_size
         || h.sector_hashtable_start || h.sector_hashtable_size || h.block_hashtable_start || h.block_hashtable_size
         || h.digest_sector_size || h.digest_block_sectorcount;
     if (digests) {
         uint32_t sector = h.digest_sector_size, block = h.digest_block_sectorcount;
-        require(sector && sector <= 0x4000 && 0x4000 % sector == 0 && block && block <= 0x100000, "Invalid DSi digest geometry");
-        require(h.digest_ntr_start && h.digest_ntr_size >= 0x4000 && uint32_t(h.digest_ntr_size) % sector == 0
+        patchRequire(sector && sector <= 0x4000 && 0x4000 % sector == 0 && block && block <= 0x100000, "Invalid DSi digest geometry");
+        patchRequire(h.digest_ntr_start && h.digest_ntr_size >= 0x4000 && uint32_t(h.digest_ntr_size) % sector == 0
             && uint32_t(h.digest_twl_size) % sector == 0 && (!h.digest_twl_size || h.digest_twl_start), "Incomplete DSi digest regions");
-        require(h.sector_hashtable_start && h.block_hashtable_start && h.sector_hashtable_size
+        patchRequire(h.sector_hashtable_start && h.block_hashtable_start && h.sector_hashtable_size
             && uint32_t(h.sector_hashtable_size) % (block * 20) == 0
             && uint64_t(h.sector_hashtable_size) >= (uint64_t(h.digest_ntr_size) + uint32_t(h.digest_twl_size)) / sector * 20
             && h.block_hashtable_size == uint32_t(h.sector_hashtable_size) / block, "Incomplete or invalid DSi digest tables");
         for (auto range : {std::pair<uint32_t, uint32_t>{h.digest_ntr_start, h.digest_ntr_size},
             {h.digest_twl_start, h.digest_twl_size}, {h.sector_hashtable_start, h.sector_hashtable_size}, {h.block_hashtable_start, h.block_hashtable_size}})
-            require(range.first <= input->size && range.second <= input->size - range.first, "DSi digest region outside ROM");
-        require(uint64_t(h.digest_ntr_start) + uint32_t(h.digest_ntr_size) <= h.sector_hashtable_start
+            patchRequire(range.first <= input->size && range.second <= input->size - range.first, "DSi digest region outside ROM");
+        patchRequire(uint64_t(h.digest_ntr_start) + uint32_t(h.digest_ntr_size) <= h.sector_hashtable_start
             && uint64_t(h.sector_hashtable_start) + uint32_t(h.sector_hashtable_size) <= h.block_hashtable_start
             && (!h.digest_twl_size || uint64_t(h.block_hashtable_start) + uint32_t(h.block_hashtable_size) <= h.digest_twl_start), "DSi digest regions overlap");
     }
     std::vector<unsigned int> ordered;
     for (unsigned int index = 0; index < programs.size(); index++) {
         uint32_t start = offset(h, index), size = length(h, index);
-        require(!size || start, "Missing DSi program ROM offset");
+        patchRequire(!size || start, "Missing DSi program ROM offset");
+        patchRequire(start <= input->size && (size ? align(size, 16) : 0) <= input->size - start, "DSi program outside ROM");
         auto data = std::make_shared<Slice>(input, start, size ? align(size, 16) : 0);
         programs[index] = {start, size, size, data, false};
         if (size) ordered.push_back(index);
     }
     std::sort(ordered.begin(), ordered.end(), [&](unsigned int a, unsigned int b) { return programs[a].start < programs[b].start; });
     for (size_t index = 1; index < ordered.size(); index++)
-        require(uint64_t(programs[ordered[index - 1]].start) + programs[ordered[index - 1]].data->size <= programs[ordered[index]].start, "DSi program regions overlap");
+        patchRequire(uint64_t(programs[ordered[index - 1]].start) + programs[ordered[index - 1]].data->size <= programs[ordered[index]].start, "DSi program regions overlap");
     for (unsigned int id : {0u, 1u}) {
         uint32_t start = id == 0 ? uint32_t(h.modcrypt1_start) : uint32_t(h.modcrypt2_start);
         uint32_t size = id == 0 ? uint32_t(h.modcrypt1_size) : uint32_t(h.modcrypt2_size);
         if (!start && !size) continue;
-        require(start && size && size % 16 == 0, "Invalid Modcrypt region");
+        patchRequire(start && size && size % 16 == 0, "Invalid Modcrypt region");
         unsigned int found = UINT32_MAX;
         for (auto index : ordered) if (start >= programs[index].start && uint64_t(start) + size <= uint64_t(programs[index].start) + programs[index].data->size) {
-            require(found == UINT32_MAX, "Modcrypt region conflicts with program ranges");
+            patchRequire(found == UINT32_MAX, "Modcrypt region conflicts with program ranges");
             found = index;
         }
-        require(found >= 2 && found < programs.size(), "Modcrypt region targets an unsupported program range");
+        patchRequire(found >= 2 && found < programs.size(), "Modcrypt region targets an unsupported program range");
         uint32_t first = start - programs[found].start;
         unsigned int kind = first == 0 && size == programs[found].data->size ? 0
             : first == 0 && found == 2 && size == std::min<uint32_t>(0x4000, programs[found].data->size) ? 1 : 2;
@@ -157,7 +158,7 @@ void CompleteTwl::decryptPrograms() {
         for (unsigned int index : {2u, 3u}) {
             bool relevant = std::any_of(regions.begin(), regions.end(), [&](const Region& region) { return region.program == index; });
             if (!relevant) continue;
-            auto actual = hash(views[index], 0, programs[index].length);
+            auto actual = hash(views[index], 0, programs[index].length, index == 2 ? "arm9i.bin" : "arm7i.bin");
             if (std::memcmp(actual.data(), mac(h, index), actual.size()) == 0) continue;
             if (!digests) { accepted = false; break; }
             for (auto& region : regions) if (region.program == index) {
@@ -188,11 +189,11 @@ void CompleteTwl::decryptPrograms() {
         if (!accepted) continue;
         bool same = found;
         if (same) for (unsigned int index = 0; index < views.size(); index++) if (!equalSources(views[index], solution[index])) { same = false; break; }
-        require(!found || same, "Cannot determine Modcrypt state uniquely");
+        patchRequire(!found || same, "Cannot determine Modcrypt state uniquely");
         solution = views;
         found = true;
     }
-    require(found, "Cannot determine Modcrypt state");
+    patchRequire(found, "Cannot determine Modcrypt state");
     for (unsigned int index = 0; index < programs.size(); index++) programs[index].data = solution[index];
 }
 
@@ -216,16 +217,16 @@ void CompleteTwl::setProgram(unsigned int index, SourcePtr data) {
 SourcePtr CompleteTwl::updateOverlays(SourcePtr arm9, Header& header, bool nitrocode,
     const std::vector<SourcePtr>& overlays, bool replaced) {
     if (overlays.size() != overlaySources.size()) {
-        require(replaced, "Changing signed overlay count requires an ARM9 replacement");
+        patchRequire(replaced, "Changing signed overlay count requires an ARM9 replacement");
         return arm9;
     }
     if (overlays == overlaySources) return arm9;
     std::vector<uint8_t> previous, current;
     TwlHasher hash;
     for (size_t index = 0; index < overlays.size(); index++) {
-        auto original = hash(overlaySources[index], 0, overlaySources[index]->size);
+        auto original = hash(overlaySources[index], 0, overlaySources[index]->size, "overarm9.bin");
         previous.insert(previous.end(), original.begin(), original.end());
-        auto value = overlays[index] == overlaySources[index] ? original : hash(overlays[index], 0, overlays[index]->size);
+        auto value = overlays[index] == overlaySources[index] ? original : hash(overlays[index], 0, overlays[index]->size, "overarm9.bin");
         current.insert(current.end(), value.begin(), value.end());
     }
     if (previous == current) return arm9;
@@ -251,7 +252,7 @@ SourcePtr CompleteTwl::updateOverlays(SourcePtr arm9, Header& header, bool nitro
             position += step;
         }
     }
-    require(matches == 1, "ARM9 overlay HMAC table cannot be uniquely located");
+    patchRequire(matches == 1, "ARM9 overlay HMAC table cannot be uniquely located");
     if (updated) return arm9;
     if (plain.compressed) {
         auto disk = std::dynamic_pointer_cast<Disk>(plain.data);
@@ -270,7 +271,7 @@ std::shared_ptr<Map> CompleteTwl::serialize(Header& h, std::vector<uint8_t> head
     uint32_t originalEnd = std::max({uint32_t(old.application_end_offset), uint32_t(old.total_rom_size),
         uint32_t(old.dsi9_rom_offset) + align(old.dsi9_size, 16), uint32_t(old.dsi7_rom_offset) + align(old.dsi7_size, 16),
         uint32_t(old.digest_twl_start) + uint32_t(old.digest_twl_size)});
-    require(originalEnd <= input->size, "DSi declared size exceeds ROM");
+    patchRequire(originalEnd <= input->size, "DSi declared size exceeds ROM");
     uint32_t boundary = (uint32_t(old.offset_0x90) >> 16) * 0x80000;
     uint32_t ntrLimit = digests ? uint32_t(old.digest_ntr_start) + uint32_t(old.digest_ntr_size) : boundary;
     if (!ntrLimit) {
@@ -306,11 +307,11 @@ std::shared_ptr<Map> CompleteTwl::serialize(Header& h, std::vector<uint8_t> head
         uint32_t position = boundary + (prefix ? 0x3000 : 0);
         for (auto index : dsi) {
             auto& item = programs[index];
-            require(item.start >= position, "TWL input regions overlap");
-            require(padding(input, position, item.start), "TWL contains unrecognized bytes whose relocation is unsupported");
+            patchRequire(item.start >= position, "TWL input regions overlap");
+            patchRequire(padding(input, position, item.start), "TWL contains unrecognized bytes whose relocation is unsupported");
             position = item.start + align(item.originalLength, 16);
         }
-        require(position <= originalEnd && padding(input, position, originalEnd), "TWL contains unrecognized trailing data whose relocation is unsupported");
+        patchRequire(position <= originalEnd && padding(input, position, originalEnd), "TWL contains unrecognized trailing data whose relocation is unsupported");
         position = std::max<uint32_t>(h.rom_header_size, 0x4000);
         for (auto& item : sections) {
             item.start = position;
@@ -349,8 +350,8 @@ std::shared_ptr<Map> CompleteTwl::serialize(Header& h, std::vector<uint8_t> head
         end = digests && first ? first + uint32_t(h.digest_twl_size) : position;
     }
     uint32_t capacity = 0x20000;
-    while (capacity < end) { require(capacity < 0x40000000, "DSi output exceeds size limit"); capacity *= 2; }
-    require(old.devicecap <= 13, "Invalid DSi cartridge capacity");
+    while (capacity < end) { patchRequire(capacity < 0x40000000, "DSi output exceeds size limit"); capacity *= 2; }
+    patchRequire(old.devicecap <= 13, "Invalid DSi cartridge capacity");
     capacity = std::max<uint32_t>(capacity, uint32_t(0x20000) << old.devicecap);
     struct Placement { uint32_t start, erase; SourcePtr data; };
     std::vector<Placement> writes;
@@ -397,20 +398,21 @@ std::shared_ptr<Map> CompleteTwl::serialize(Header& h, std::vector<uint8_t> head
         plain[index] = index < 2 ? std::make_shared<Slice>(output, offset(h, index), index == 0 ? uint32_t(h.arm9_size) : align(h.arm7_size, 16)) : programs[index].data;
         if (!length(h, index)) continue;
         auto data = index == 0 ? encryptedSecure(work, plain[index], h, decrypted) : plain[index];
-        auto value = hash(data, 0, length(h, index));
+        auto value = hash(data, 0, length(h, index), index == 0 ? "arm9.bin" : index == 1 ? "arm7.bin" : index == 2 ? "arm9i.bin" : "arm7i.bin");
         std::memcpy(mac(h, index), value.data(), value.size());
         if (index == 0) plain[0] = data;
     }
     require(h.arm9_size >= 0x4000, "ARM9 secure area is truncated");
-    auto value = hash(plain[0], 0x4000, uint32_t(h.arm9_size) - 0x4000);
+    auto value = hash(plain[0], 0x4000, uint32_t(h.arm9_size) - 0x4000, "arm9.bin");
     std::memcpy(h.hmac_arm9_no_secure, value.data(), value.size());
-    value = hash(output, h.banner_offset, h.banner_size);
+    value = hash(output, h.banner_offset, h.banner_size, "banner.bin");
     std::memcpy(h.hmac_icon_title, value.data(), value.size());
     if (digests) {
         auto sectors = work.map();
         std::vector<uint8_t> hashes;
         hashes.reserve(BufferSize);
         uint32_t total = uint32_t(h.digest_ntr_size) + uint32_t(h.digest_twl_size), completed = 0;
+        progress("Checking game data", 0, total, true);
         auto put = [&](const std::array<uint8_t, 20>& digest) {
             hashes.insert(hashes.end(), digest.begin(), digest.end());
             if (hashes.size() >= BufferSize - 20) { sectors->literal(hashes.data(), hashes.size()); hashes.clear(); }
@@ -460,7 +462,7 @@ std::shared_ptr<Map> CompleteTwl::serialize(Header& h, std::vector<uint8_t> head
     for (const auto& region : regions) {
         auto& item = programs[region.program];
         uint32_t size = !item.length ? 0 : region.kind == 0 ? item.data->size : region.kind == 1 ? std::min<uint32_t>(0x4000, item.data->size) : region.length;
-        require(!size || uint64_t(region.offset) + size <= item.data->size, "Modcrypt region exceeds program after replacement");
+        patchRequire(!size || uint64_t(region.offset) + size <= item.data->size, "Modcrypt region exceeds program after replacement");
         uint32_t start = size ? uint32_t(offset(h, region.program)) + region.offset : 0;
         if (region.id == 0) { h.modcrypt1_start = start; h.modcrypt1_size = size; }
         else { h.modcrypt2_start = start; h.modcrypt2_size = size; }

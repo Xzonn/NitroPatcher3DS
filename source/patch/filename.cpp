@@ -23,7 +23,7 @@ std::string decodeName(const std::string& bytes) {
 std::string encodeName(const std::string& name) {
     una::error error;
     auto text = una::strict::utf8to32u(name, error);
-    require(!error, "FNT name is not UTF-8");
+    patchRequire(!error, "FNT name is not UTF-8");
     iconv_t converter = iconv_open("CP932", "UTF-32LE");
     require(converter != (iconv_t)-1, "Cannot initialize FNT name conversion");
     std::string result;
@@ -35,7 +35,7 @@ std::string encodeName(const std::string& name) {
         bool encoded = iconv(converter, &input, &inputSize, &output, &outputSize) != size_t(-1) && inputSize == 0;
         if (!encoded) {
             require(iconv_close(converter) == 0, "Cannot close FNT name converter");
-            fail("FNT name cannot be represented in Shift_JIS: " + name);
+            patchRequire(false, "FNT name cannot be represented in Shift_JIS: " + name);
         }
         // iconv-lite selects these canonical bytes for duplicate CP932 mappings.
         uint16_t canonical = 0;
@@ -50,8 +50,8 @@ std::string encodeName(const std::string& name) {
         } else result.append(bytes, sizeof(bytes) - outputSize);
     }
     require(iconv_close(converter) == 0, "Cannot close FNT name converter");
-    require(decodeName(result) == name, "FNT name cannot be represented in Shift_JIS: " + name);
-    require(!result.empty() && result.size() <= 127, "FNT name must contain 1 to 127 encoded bytes");
+    patchRequire(decodeName(result) == name, "FNT name cannot be represented in Shift_JIS: " + name);
+    patchRequire(!result.empty() && result.size() <= 127, "FNT name must contain 1 to 127 encoded bytes");
     return result;
 }
 

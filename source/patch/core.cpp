@@ -139,6 +139,10 @@ void require(bool condition, const std::string& message) {
     if (!condition) fail(message);
 }
 
+void patchRequire(bool condition, const std::string& message) {
+    if (!condition) throw PatchError{message};
+}
+
 Disk::Disk(const std::string& name, const char* mode) : path(name) {
     NP3D_PREPARE_LOG("FILE open begin mode=" + std::string(mode) + " path=" + path);
     handle = std::fopen(path.c_str(), mode);

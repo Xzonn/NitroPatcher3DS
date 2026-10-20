@@ -610,5 +610,17 @@
     "key": "storage_repair.backup_path",
     "original": "Metadata backup:\n{path}",
     "translation": "메타데이터 백업:\n{path}"
+  },
+  {
+    "index": 103,
+    "key": "prepare.stage.check_dsi_data",
+    "original": "Checking DSi program data",
+    "translation": "DSi 프로그램 데이터 확인 중"
+  },
+  {
+    "index": 104,
+    "key": "patch_error.dsi_mode_required",
+    "original": "Preparing patches for this DSi-enhanced cartridge requires DSi mode. Use a 3DS or DSi.",
+    "translation": "이 DSi 확장 게임 카드의 패치를 준비하려면 DSi 모드가 필요합니다. 3DS 또는 DSi를 사용해 주세요."
   }
 ]

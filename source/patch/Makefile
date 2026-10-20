@@ -37,7 +37,7 @@ CPPFLAGS += -DXD3_ENCODER=0 -DXD3_USE_LARGEFILE64=0 -DXD3_USE_LARGESIZET=0 -DHAV
 CPPFLAGS += -DSECONDARY_DJW=1 -DHAVE_LZMA_H=1
 CPPFLAGS += -DSIZEOF_SIZE_T=__SIZEOF_SIZE_T__ -DSIZEOF_UNSIGNED_INT=__SIZEOF_INT__ -DSIZEOF_UNSIGNED_LONG=__SIZEOF_LONG__ -DSIZEOF_UNSIGNED_LONG_LONG=__SIZEOF_LONG_LONG__
 CFLAGS := -O2 -g -Wall -ffunction-sections -fdata-sections $(ARCH)
-CXXFLAGS := $(CFLAGS) -std=gnu++17 -fno-exceptions
+CXXFLAGS := $(CFLAGS) -std=gnu++17 -fexceptions
 VPATH := $(CURDIR):$(COMMON):$(MINIZ):$(XDELTA):$(CJSON):$(MBEDTLS)/library:$(MD4C):$(ROOT)/vendor/BlzHelper/native
 CFILES := miniz.c miniz_zip.c miniz_tinfl.c cJSON.c xdelta3.c md5.c sha1.c sha256.c md.c aes.c platform_util.c md4c.c entity.c
 CPPFILES := core.cpp delta.cpp package.cpp cache.cpp rom.cpp twl.cpp twl_complete.cpp arm9_blz.cpp blz.cpp nds_adapter.cpp ndsextract.cpp fnt.cpp filename.cpp encryption.cpp crc.cpp environment.cpp ui_data.cpp preparation_progress.cpp

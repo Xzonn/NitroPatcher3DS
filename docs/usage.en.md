@@ -54,6 +54,10 @@ Put patches directly in the `patches` folder. The app only lists patch files at 
 
 XZP packages can be used directly without extracting them. ZIP packages must follow the XZP structure. If a download contains a separate `.xdelta` file, extract that file and put it in the patch folder.
 
+XZP formats 1 and 2 are supported. Format 2 can add game files and ARM9/ARM7 overlays. Later patches can modify these additions. The format is declared in the package's `metadata.json`; no manual setting is needed.
+
+On 3DS and DSi, format 2 preparation also supports DSi-enhanced games, including their DSi programs and related digests. Games still launch in DS mode. DSi-exclusive games and DSiWare are unsupported. NDS/DS Lite cannot currently read the complete TWL region required for these patches; format 2 patches for ordinary NDS games are supported.
+
 Check that your cartridge matches the game region and revision required by the patch.
 
 ## Selecting patches and starting a game
@@ -77,6 +81,8 @@ Reopen the app after adding patches. To change cartridges or recover after remov
 Patches are applied in the order you select them. The numbers `[1]`, `[2]` and so on beside their names show this order. To change the order, deselect the patches and select them again in the order you need.
 
 Follow the patch authors' instructions when combining patches. For example, if a modification requires a translated version of the game, select the translation patch first, followed by that modification.
+
+You can combine format 1, format 2 and whole-ROM Xdelta patches. Each patch uses the preceding result as its input, including for its MD5 requirement and preprocessing. An incompatible order stops preparation and displays an error.
 
 ## Buttons and touch controls
 
@@ -110,7 +116,11 @@ To free up space, turn off the console and delete `nitro-patcher/cache/`. The ap
 
 Your language and patch selections are stored in `nitro-patcher/config/settings.json`.
 
+When an app update changes the preparation rules, an older cache is rebuilt automatically when that patch combination is used. Incomplete caches left by failed or interrupted preparation cannot launch games. Select the patches and start again to retry.
+
 ## Troubleshooting
+
+For an unsupported format version, file name, directory layout or overlay configuration, open the error details and press B to return and change your patch selection. The corresponding controls on the touch screen also work.
 
 If no patches appear, check that the files are directly inside `nitro-patcher/patches/` and have a `.xzp`, `.zip` or `.xdelta` extension. Reopen the app after copying files.
 

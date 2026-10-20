@@ -20,6 +20,10 @@ void setFatalHandler(FatalHandler handler);
 void require(bool condition, const std::string& message);
 inline void require(bool condition, const char* message) { if (!condition) fail(message); }
 
+struct PatchError { std::string message; };
+void patchRequire(bool condition, const std::string& message);
+inline void patchRequire(bool condition, const char* message) { if (!condition) patchRequire(false, std::string(message)); }
+
 #if NP3D_PREPARE_TRACE
 #define NP3D_PREPARE_LOG(message) ::np3d::logPreparation(message)
 #else
