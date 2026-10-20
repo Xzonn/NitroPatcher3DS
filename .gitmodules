@@ -31,3 +31,6 @@
 [submodule "vendor/libfat"]
 	path = vendor/libfat
 	url = https://github.com/Xzonn/libfat.git
+[submodule "vendor/BlzHelper"]
+	path = vendor/BlzHelper
+	url = https://github.com/Xzonn/BlzHelper.git

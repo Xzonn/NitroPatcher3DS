@@ -3,14 +3,34 @@
 #include "banner.h"
 #include "filename.h"
 #include "fnt.h"
+#include "twl.h"
 #include <cstring>
 #include <map>
 #include <set>
+#include <charconv>
 
 namespace np3d {
 
 struct Allocation { unsigned_int start, end; };
-struct RomFile { std::string name; uint32_t id; SourcePtr data; uint32_t original; };
+struct RomFile { std::string name; uint32_t id; SourcePtr data; uint32_t original; uint32_t offset = 0, size = 0; };
+
+static std::string overlayPath(unsigned int cpu, uint32_t id) {
+    char name[48];
+    std::snprintf(name, sizeof(name), cpu == 9 ? "overlay/overlay_%04u.bin" : "overlay/overlay7_%04u.bin", unsigned(id));
+    return name;
+}
+
+static std::vector<OverlayEntry> readOverlays(SourcePtr data) {
+    require(data->size % sizeof(OverlayEntry) == 0, "Invalid replacement overlay table");
+    std::vector<OverlayEntry> table;
+    for (uint32_t position = 0; position < data->size; position += sizeof(OverlayEntry)) {
+        OverlayEntry item;
+        data->read(position, &item, sizeof(item));
+        if (item.id == 0xffffffff) break;
+        table.push_back(item);
+    }
+    return table;
+}
 
 static uint32_t addNamedFile(std::vector<NamedFile>& names, std::vector<NamedDirectory>& directories, const std::string& path) {
     std::vector<std::string> parts;
@@ -54,7 +74,7 @@ static uint32_t addNamedFile(std::vector<NamedFile>& names, std::vector<NamedDir
 
 static SourcePtr layoutFiles(Workspace& work, SourcePtr input, std::vector<RomFile>& files,
     std::vector<NamedFile>& names, std::vector<NamedDirectory>& directories,
-    const std::vector<uint32_t>& positions, std::vector<Allocation>& allocations,
+    const std::vector<uint32_t>& positions, const std::vector<uint32_t>& addedOverlays, std::vector<Allocation>& allocations,
     std::vector<uint32_t>& order, std::vector<uint32_t>& oldIds) {
     std::vector<bool> named(allocations.size(), false), overlays(allocations.size(), false);
     std::vector<uint32_t> existing(allocations.size(), UINT32_MAX);
@@ -65,15 +85,19 @@ static SourcePtr layoutFiles(Workspace& work, SourcePtr input, std::vector<RomFi
         existing[file.id] = index;
         if (file.name.compare(0, 8, "overlay/") == 0) overlays[file.id] = true;
     }
-    for (bool overlay : {true, false}) for (uint32_t id = 0; id < allocations.size(); id++) {
-        if (named[id] || overlays[id] != overlay) continue;
-        uint32_t index = existing[id];
-        if (index == UINT32_MAX) {
-            index = files.size();
-            files.push_back({"FAT entry " + std::to_string(id), id,
-                std::make_shared<Slice>(input, allocations[id].start, uint32_t(allocations[id].end) - uint32_t(allocations[id].start)), id});
+    for (bool overlay : {true, false}) {
+        for (uint32_t id = 0; id < allocations.size(); id++) {
+            if (named[id] || overlays[id] != overlay) continue;
+            uint32_t index = existing[id];
+            if (index == UINT32_MAX) {
+                index = files.size();
+                files.push_back({"FAT entry " + std::to_string(id), id,
+                    std::make_shared<Slice>(input, allocations[id].start, uint32_t(allocations[id].end) - uint32_t(allocations[id].start)), id,
+                    allocations[id].start, uint32_t(allocations[id].end) - uint32_t(allocations[id].start)});
+            }
+            order.push_back(index);
         }
-        order.push_back(index);
+        if (overlay) order.insert(order.end(), addedOverlays.begin(), addedOverlays.end());
     }
     std::vector<uint32_t> pending{0}, orderedDirectories, firstFiles(directories.size());
     while (!pending.empty()) {
@@ -167,6 +191,123 @@ static std::vector<uint8_t> bannerBytes(SourcePtr input, uint32_t hardSize) {
     return bytes;
 }
 
+static std::shared_ptr<Map> buildCompleteRom(Workspace& work, SourcePtr input, Package& package, CompleteTwl& twl,
+    Header& h, std::vector<uint8_t> headerData, std::vector<RomFile>& files, SourcePtr fnt,
+    std::vector<Allocation>& allocations, std::array<std::vector<OverlayEntry>, 2>& tables, bool changed) {
+    progress("Preparing DSi files", 0, 0);
+    auto system = [&](const std::string& name) -> RomFile& {
+        auto found = std::find_if(files.begin(), files.end(), [&](const RomFile& file) { return file.name == name; });
+        require(found != files.end(), "Missing DSi file: " + name);
+        return *found;
+    };
+    auto patched = [&](const std::string& name) { return package.has(name) || package.has("xdelta/" + name); };
+    auto& arm9File = system("arm9.bin");
+    auto arm9 = arm9File.data;
+    uint32_t marker = 0;
+    if (arm9->size >= 12) arm9->read(arm9->size - 12, &marker, sizeof(marker));
+    bool nitrocode = marker == 0xdec00621;
+    uint64_t secureMarker = 0;
+    if (arm9->size >= 8) arm9->read(0, &secureMarker, sizeof(secureMarker));
+    bool decrypted = secureMarker == UINT64_C(0xe7ffdeffe7ffdeff);
+    auto oldHeader = std::make_unique<Header>();
+    input->read(0, oldHeader.get(), sizeof(Header));
+    if (!decrypted && std::memcmp(h.gamecode, oldHeader->gamecode, 4)) {
+        auto secure = readBytes(arm9, 0, 0x4000);
+        uint32_t previous, current;
+        std::memcpy(&previous, oldHeader->gamecode, 4);
+        std::memcpy(&current, h.gamecode, 4);
+        decrypt_arm9(previous, secure.data());
+        encrypt_arm9(current, secure.data());
+        arm9 = overwrite(work, arm9, 0, secure.data(), secure.size());
+    }
+    std::vector<SourcePtr> signedOverlays;
+    for (auto& entry : tables[0]) if (uint32_t(entry.reserved) & 0x2000000) signedOverlays.push_back(system(overlayPath(9, entry.id)).data);
+    arm9 = twl.updateOverlays(arm9, h, nitrocode, signedOverlays, patched("arm9.bin"));
+    require(arm9->size >= 0x4000 + (nitrocode ? 12 : 0), "ARM9 secure area is truncated");
+    h.arm9_size = arm9->size - (nitrocode ? 12 : 0);
+    auto secure = readBytes(arm9, 0, 0x4000);
+    uint32_t code;
+    std::memcpy(&code, h.gamecode, 4);
+    if (!decrypted) decrypt_arm9(code, secure.data());
+    unsigned_short crc = CalcCrc16(secure.data() + 0x10, 0x7f0);
+    std::memcpy(secure.data() + 0xe, &crc, sizeof(crc));
+    if (!decrypted) encrypt_arm9(code, secure.data());
+    arm9 = overwrite(work, arm9, 0, secure.data(), secure.size());
+    std::vector<TwlSection> sections;
+    auto add = [&](RomFile& file, SourcePtr data, std::function<void(uint32_t)> place) {
+        sections.push_back({file.offset, file.size, data, place, {}});
+    };
+    add(arm9File, arm9, [&](uint32_t start) { h.arm9_rom_offset = start; });
+    std::vector<Allocation> fat(changed ? 0 : allocations.size());
+    if (changed) {
+        uint32_t count = 0;
+        for (auto& file : files) if (file.id != 0xffff && file.id != UINT32_MAX) count = std::max(count, file.id + 1);
+        fat.resize(count);
+    }
+    std::vector<RomFile*> byId(fat.size(), nullptr);
+    for (auto& file : files) if (file.id != 0xffff && file.id != UINT32_MAX
+        && (!byId[file.id] || file.name.compare(0, 8, "overlay/") == 0)) byId[file.id] = &file;
+    std::vector<bool> written(fat.size());
+    auto payload = [&](uint32_t id) {
+        if (written[id]) return;
+        written[id] = true;
+        auto file = byId[id];
+        SourcePtr data = file ? file->data : std::make_shared<Slice>(input, allocations[id].start, uint32_t(allocations[id].end) - uint32_t(allocations[id].start));
+        uint32_t start = file ? file->offset : uint32_t(allocations[id].start), size = file ? file->size : data->size;
+        sections.push_back({start, size, data, [&, id, data](uint32_t position) { fat[id].start = position; fat[id].end = position + data->size; }, {}});
+    };
+    auto overlays = [&](unsigned int cpu) {
+        std::string name = cpu == 9 ? "overarm9.bin" : "overarm7.bin";
+        auto found = std::find_if(files.begin(), files.end(), [&](const RomFile& file) { return file.name == name; });
+        if (found == files.end()) return;
+        auto& table = tables[cpu == 9 ? 0 : 1];
+        for (auto& entry : table) {
+            auto& file = system(overlayPath(cpu, entry.id));
+            uint32_t flags = entry.reserved;
+            if ((flags & 0x1000000) || (cpu == 7 && flags)) entry.reserved = (flags & 0xff000000) | (file.data->size & 0xffffff);
+            entry.file_id = file.id;
+        }
+        auto data = work.map();
+        data->literal(table.data(), table.size() * sizeof(OverlayEntry));
+        data->finish();
+        if (cpu == 9) h.arm9_overlay_size = data->size;
+        else h.arm7_overlay_size = data->size;
+        add(*found, data, [&, cpu](uint32_t start) { (cpu == 9 ? h.arm9_overlay_offset : h.arm7_overlay_offset) = start; });
+        for (auto& entry : table) payload(entry.file_id);
+    };
+    overlays(9);
+    auto& arm7 = system("arm7.bin");
+    h.arm7_size = arm7.data->size;
+    add(arm7, arm7.data, [&](uint32_t start) { h.arm7_rom_offset = start; });
+    overlays(7);
+    h.fnt_size = fnt->size;
+    add(system("fnt.bin"), fnt, [&](uint32_t start) { h.fnt_offset = start; });
+    h.fat_size = fat.size() * sizeof(Allocation);
+    auto emptyFat = work.map();
+    emptyFat->append(Kind::Fill, 0, h.fat_size);
+    emptyFat->finish();
+    add(system("fat.bin"), emptyFat, [&](uint32_t start) { h.fat_offset = start; });
+    sections.back().generate = [&]() {
+        auto output = work.map();
+        output->literal(fat.data(), fat.size() * sizeof(Allocation));
+        output->finish();
+        return output;
+    };
+    auto& banner = system("banner.bin");
+    auto bytes = bannerBytes(banner.data, patched("banner.bin") ? banner.data->size : uint32_t(h.banner_size));
+    h.banner_size = bytes.size();
+    auto data = work.map();
+    data->literal(bytes.data(), bytes.size());
+    data->finish();
+    add(banner, data, [&](uint32_t start) { h.banner_offset = start; });
+    for (uint32_t id = 0; id < fat.size(); id++) payload(id);
+    for (unsigned int index : {2u, 3u}) {
+        std::string name = index == 2 ? "arm9i.bin" : "arm7i.bin";
+        if (patched(name)) twl.setProgram(index, system(name).data);
+    }
+    return twl.serialize(h, std::move(headerData), sections, changed, decrypted);
+}
+
 std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package) {
     require(input->size >= 512, "NDS header is truncated");
     auto headerStorage = std::make_unique<Header>();
@@ -174,10 +315,7 @@ std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package
     std::memset(&h, 0, sizeof(h));
     input->read(0, &h, std::min<uint32_t>(input->size, sizeof(h)));
     bool format2 = package.metadata.formatVersion == 2;
-    if (format2 && h.unitcode != 0) {
-        work.error = "XZP format 2 DSi processing is not available in this build";
-        return nullptr;
-    }
+    if (format2) require(h.unitcode == 0 || h.unitcode == 2, "Unsupported ROM unit code for XZP format 2");
     uint32_t headerSize = h.rom_header_size;
     require(headerSize >= 0x170 && headerSize <= input->size, "Invalid NDS header size");
     if (h.unitcode & 2) require(headerSize >= 0x1000, "DSi header is truncated");
@@ -204,7 +342,7 @@ std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package
     });
     std::vector<RomFile> files;
     auto add = [&](const std::string& name, uint32_t id, uint32_t offset, uint32_t size) {
-        files.push_back({name, id, std::make_shared<Slice>(input, offset, size), id});
+        files.push_back({name, id, std::make_shared<Slice>(input, offset, size), id, offset, size});
     };
     auto bannerInput = std::make_shared<Slice>(input, h.banner_offset, input->size - uint32_t(h.banner_offset));
     auto originalBanner = bannerBytes(bannerInput, h.unitcode & 2 ? uint32_t(h.banner_size) : 0);
@@ -216,6 +354,14 @@ std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package
     add("arm7.bin", 0xffff, h.arm7_rom_offset, h.arm7_size);
     if (h.arm9_overlay_size) add("overarm9.bin", 0xffff, h.arm9_overlay_offset, h.arm9_overlay_size);
     if (h.arm7_overlay_size) add("overarm7.bin", 0xffff, h.arm7_overlay_offset, h.arm7_overlay_size);
+    bool addedTable = false;
+    if (format2) for (const char* table : {"overarm9.bin", "overarm7.bin"}) {
+        bool present = std::any_of(files.begin(), files.end(), [&](const RomFile& file) { return file.name == table; });
+        if (!present && (package.has(table) || package.has(std::string("xdelta/") + table))) {
+            add(table, 0xffff, 0, 0);
+            addedTable = true;
+        }
+    }
     progress("Reading game directory", 0, 0);
     std::vector<NamedDirectory> directories;
     auto names = enumerateFiles(input, h, format2, format2 ? &directories : nullptr);
@@ -224,6 +370,8 @@ std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package
         namedPositions.push_back(files.size());
         add(item.name, item.id, item.offset, item.length);
     }
+    std::array<std::vector<uint32_t>, 2> originalOverlays;
+    std::vector<SourcePtr> signedOverlays;
     for (unsigned int cpu : {9u, 7u}) {
         uint32_t offset = cpu == 9 ? uint32_t(h.arm9_overlay_offset) : uint32_t(h.arm7_overlay_offset);
         uint32_t size = cpu == 9 ? uint32_t(h.arm9_overlay_size) : uint32_t(h.arm7_overlay_size);
@@ -234,10 +382,16 @@ std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package
             if (item.id == 0xffffffff) break;
             require(item.file_id < allocations.size(), "Overlay file ID outside FAT");
             auto& allocation = allocations[item.file_id];
-            char name[48];
-            std::snprintf(name, sizeof(name), cpu == 9 ? "overlay/overlay_%04u.bin" : "overlay/overlay7_%04u.bin", unsigned(item.id));
-            add(name, item.file_id, allocation.start, uint32_t(allocation.end) - uint32_t(allocation.start));
+            originalOverlays[cpu == 9 ? 0 : 1].push_back(item.id);
+            add(overlayPath(cpu, item.id), item.file_id, allocation.start, uint32_t(allocation.end) - uint32_t(allocation.start));
+            if (cpu == 9 && (uint32_t(item.reserved) & 0x2000000)) signedOverlays.push_back(files.back().data);
         }
+    }
+    std::unique_ptr<CompleteTwl> twl;
+    if (format2 && h.unitcode == 2) {
+        twl = std::make_unique<CompleteTwl>(work, input, h, signedOverlays);
+        files.push_back({"arm9i.bin", 0xffff, twl->program(2), 0xffff, h.dsi9_rom_offset, h.dsi9_size});
+        files.push_back({"arm7i.bin", 0xffff, twl->program(3), 0xffff, h.dsi7_rom_offset, h.dsi7_size});
     }
     std::set<std::string> unique;
     for (const auto& file : files) require(unique.insert(normalize(file.name)).second, "Duplicate ROM path: " + file.name);
@@ -251,7 +405,7 @@ std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package
         for (const auto& item : package.entries) {
             bool delta = item.first.compare(0, 7, "xdelta/") == 0;
             std::string target = delta ? item.first.substr(7) : item.first;
-            if (target.compare(0, 5, "data/") != 0 || unique.count(target)) continue;
+            if ((target.compare(0, 5, "data/") != 0 && target.compare(0, 8, "overlay/") != 0) || unique.count(target)) continue;
             if (!delta && package.has("xdelta/" + target)) continue;
             additions.push_back({delta ? item.second.name.substr(7) : item.second.name, target});
         }
@@ -260,26 +414,74 @@ std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package
     }
     uint32_t completed = 0;
     uint32_t fileCount = files.size() + additions.size();
+    bool identical = !addedTable && additions.empty();
     for (auto& file : files) {
         progress("Preparing game files", completed, fileCount, false, file.name.c_str());
-        file.data = package.replace(file.name, file.data);
+        auto original = file.data;
+        file.data = package.replace(file.name, original);
         if (!file.data) return nullptr;
+        if (twl && identical && file.data != original && (!equalSources(file.data, original)
+            || ((file.name == "arm9i.bin" || file.name == "arm7i.bin") && !file.data->size))) identical = false;
         progress("Preparing game files", ++completed, fileCount, false, file.name.c_str());
-    }
-    for (const auto& addition : additions) {
-        uint32_t file = addNamedFile(names, directories, addition.first);
-        progress("Preparing game files", completed, fileCount, false, names[file].name.c_str());
-        auto data = package.replace(addition.second, std::make_shared<Slice>(input, 0, 0));
-        if (!data) return nullptr;
-        namedPositions.push_back(files.size());
-        files.push_back({names[file].name, UINT32_MAX, data, UINT32_MAX});
-        progress("Preparing game files", ++completed, fileCount, false, names[file].name.c_str());
     }
     auto system = [&](const std::string& name) -> SourcePtr {
         auto found = std::find_if(files.begin(), files.end(), [&](const RomFile& item) { return item.name == name; });
         require(found != files.end(), "Missing system file: " + name);
         return found->data;
     };
+    std::array<std::vector<OverlayEntry>, 2> overlayTables;
+    if (format2) for (unsigned int cpu : {9u, 7u}) {
+        std::string name = cpu == 9 ? "overarm9.bin" : "overarm7.bin";
+        if (unique.count(name)) overlayTables[cpu == 9 ? 0 : 1] = readOverlays(system(name));
+    }
+    std::vector<std::pair<std::pair<unsigned int, uint32_t>, uint32_t>> newOverlayFiles;
+    for (const auto& addition : additions) {
+        bool overlay = addition.second.compare(0, 8, "overlay/") == 0;
+        uint32_t file = UINT32_MAX;
+        unsigned int cpu = 9;
+        uint32_t overlayId = 0;
+        if (overlay) {
+            const auto& path = addition.second;
+            bool arm7 = path.compare(0, 17, "overlay/overlay7_") == 0;
+            size_t first = arm7 ? 17 : 16;
+            bool syntax = path.size() >= first + 8 && path.compare(path.size() - 4, 4, ".bin") == 0;
+            if (syntax) {
+                auto end = path.data() + path.size() - 4;
+                auto parsed = std::from_chars(path.data() + first, end, overlayId);
+                syntax = parsed.ec == std::errc() && parsed.ptr == end && overlayId != UINT32_MAX;
+            }
+            cpu = arm7 ? 7 : 9;
+            require(syntax && overlayPath(cpu, overlayId) == path, "Invalid overlay path: " + addition.first);
+            std::string tableName = cpu == 9 ? "overarm9.bin" : "overarm7.bin";
+            require(unique.count(tableName), "New overlay requires " + tableName + ": " + addition.first);
+            auto& table = overlayTables[cpu == 9 ? 0 : 1];
+            require(std::any_of(table.begin(), table.end(), [&](OverlayEntry& item) { return item.id == overlayId; }),
+                "New overlay is missing its table entry: " + addition.first);
+        } else file = addNamedFile(names, directories, addition.first);
+        progress("Preparing game files", completed, fileCount, false, addition.first.c_str());
+        auto data = package.replace(addition.second, std::make_shared<Slice>(input, 0, 0));
+        if (!data) return nullptr;
+        if (overlay) newOverlayFiles.push_back({{cpu == 9 ? 0u : 1u, overlayId}, files.size()});
+        else namedPositions.push_back(files.size());
+        files.push_back({overlay ? overlayPath(cpu, overlayId) : names[file].name, UINT32_MAX, data, UINT32_MAX});
+        unique.insert(normalize(files.back().name));
+        progress("Preparing game files", ++completed, fileCount, false, addition.first.c_str());
+    }
+    if (format2) for (unsigned int cpu : {9u, 7u}) {
+        size_t index = cpu == 9 ? 0 : 1;
+        std::set<uint32_t> ids;
+        for (auto& item : overlayTables[index]) {
+            require(ids.insert(item.id).second, "Duplicate overlay ID: " + std::to_string(uint32_t(item.id)));
+            require(unique.count(overlayPath(cpu, item.id)), "Overlay table entry has no payload: " + overlayPath(cpu, item.id));
+        }
+        for (auto id : originalOverlays[index]) require(ids.count(id), "Removing overlays is unsupported");
+    }
+    if (twl && identical) {
+        auto output = work.map();
+        output->copy(input, 0, input->size);
+        output->finish();
+        return output;
+    }
     SourcePtr fnt = system("fnt.bin");
     if (package.has("fnt.bin") || package.has("xdelta/fnt.bin")) {
         auto combined = work.map();
@@ -298,10 +500,14 @@ std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package
         std::sort(after.begin(), after.end());
         require(before == after, "Replacement FNT must preserve existing file IDs");
     }
-    bool changed = !additions.empty();
+    bool changed = !additions.empty() || addedTable;
+    require(!changed || (!package.has("fnt.bin") && !package.has("xdelta/fnt.bin")), "Adding files conflicts with an fnt.bin replacement");
     std::vector<uint32_t> layout, oldIds;
     if (changed) {
-        fnt = layoutFiles(work, input, files, names, directories, namedPositions, allocations, layout, oldIds);
+        std::sort(newOverlayFiles.begin(), newOverlayFiles.end());
+        std::vector<uint32_t> addedOverlays;
+        for (const auto& file : newOverlayFiles) addedOverlays.push_back(file.second);
+        fnt = layoutFiles(work, input, files, names, directories, namedPositions, addedOverlays, allocations, layout, oldIds);
         sorted.resize(layout.size());
         for (uint32_t index = 0; index < sorted.size(); index++) sorted[index] = index;
     }
@@ -317,9 +523,26 @@ std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package
         data->read(0, &replacement, std::min<uint32_t>(sizeof(replacement), data->size));
         require(uint32_t(replacement.rom_header_size) >= 0x170 && replacement.rom_header_size <= data->size,
             "Invalid replacement header size");
-        std::memcpy(h.title, replacement.title, sizeof(h.title));
-        std::memcpy(h.gamecode, replacement.gamecode, sizeof(h.gamecode));
+        if (twl) {
+            require(data->size >= sizeof(Header) && replacement.unitcode == 2 && replacement.tid_high == h.tid_high
+                && replacement.tid_low == h.tid_low && (!h.dsi9_size || replacement.dsi9_size) && (!h.dsi7_size || replacement.dsi7_size),
+                "Replacement header changes or clears the DSi cartridge identity or programs");
+            auto original = std::make_unique<Header>(h);
+            h = replacement;
+            for (auto range : {std::pair<uint32_t, uint32_t>{0x20, 0x40}, {0x40, 0x60}, {0x68, 0x6e}, {0x80, 0x88},
+                {0x90, 0x94}, {0x1c0, 0x1c4}, {0x1cc, 0x1d4}, {0x1dc, 0x214}, {0x220, 0x230}, {0x300, 0x378}, {0x3a0, 0x3b4}, {0xf80, 0x1000}})
+                std::memcpy(reinterpret_cast<uint8_t*>(&h) + range.first, reinterpret_cast<uint8_t*>(original.get()) + range.first, range.second - range.first);
+            h.arm9_entry_address = replacement.arm9_entry_address;
+            h.arm9_ram_address = replacement.arm9_ram_address;
+            h.arm7_entry_address = replacement.arm7_entry_address;
+            h.arm7_ram_address = replacement.arm7_ram_address;
+            h.dsi7_ram_address = replacement.dsi7_ram_address;
+        } else {
+            std::memcpy(h.title, replacement.title, sizeof(h.title));
+            std::memcpy(h.gamecode, replacement.gamecode, sizeof(h.gamecode));
+        }
     }
+    if (twl) return buildCompleteRom(work, input, package, *twl, h, std::move(headerData), files, fnt, allocations, overlayTables, changed);
     std::vector<uint8_t> signature;
     uint32_t logicalSize = h.application_end_offset;
     if (logicalSize >= headerSize && logicalSize <= input->size && input->size - logicalSize >= 0x88) {
@@ -354,35 +577,32 @@ std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr input, Package& package
         std::string name = cpu == 9 ? "overarm9.bin" : "overarm7.bin";
         if (!unique.count(name)) return;
         auto data = system(name);
-        require(data->size % sizeof(OverlayEntry) == 0, "Invalid replacement overlay table");
-        std::vector<OverlayEntry> table;
-        for (uint32_t position = 0; position < data->size; position += sizeof(OverlayEntry)) {
-            OverlayEntry item;
-            data->read(position, &item, sizeof(item));
-            if (item.id == 0xffffffff) break;
-            table.push_back(item);
-        }
+        auto table = format2 ? std::move(overlayTables[cpu == 9 ? 0 : 1]) : readOverlays(data);
         std::string prefix = cpu == 9 ? "overlay/overlay_" : "overlay/overlay7_";
         std::vector<RomFile*> payloads;
         for (auto& file : files) if (file.name.compare(0, prefix.size(), prefix) == 0) payloads.push_back(&file);
         std::stable_sort(payloads.begin(), payloads.end(), [](const RomFile* a, const RomFile* b) { return a->original < b->original; });
-        require(payloads.size() == table.size(), "Changing overlay file count is unsupported");
+        require(payloads.size() == table.size(), "Overlay table does not match its payloads");
         std::map<uint32_t, OverlayEntry*> entries;
-        for (auto& item : table) entries.emplace(item.file_id, &item);
+        for (auto& item : table) entries.emplace(format2 ? uint32_t(item.id) : uint32_t(item.file_id), &item);
         for (const auto* file : payloads) {
-            auto found = entries.find(file->original);
+            auto found = entries.end();
+            if (format2) {
+                found = std::find_if(entries.begin(), entries.end(), [&](auto& entry) { return overlayPath(cpu, entry.first) == file->name; });
+            } else found = entries.find(file->original);
             require(found != entries.end(), "Replacement overlay table is missing a file ID");
             auto item = found->second;
             uint32_t size = changed ? byId[file->id]->data->size : file->data->size;
             uint32_t flags = item->reserved;
             if (((flags >> 24) & 1) || (cpu == 7 && flags > 0)) item->reserved = (flags & 0xff000000) | (size & 0xffffff);
-            if (changed) for (auto& matching : table) if (matching.file_id == file->original) {
+            if (format2) item->file_id = file->id;
+            else if (changed) for (auto& matching : table) if (matching.file_id == file->original) {
                 uint32_t flags = matching.reserved;
                 if (((flags >> 24) & 1) || (cpu == 7 && flags > 0)) matching.reserved = (flags & 0xff000000) | (size & 0xffffff);
             }
             overlayIds.insert(file->id);
         }
-        if (changed) for (auto& item : table) {
+        if (changed && !format2) for (auto& item : table) {
             require(item.file_id < oldIds.size(), "Overlay file ID outside FAT");
             item.file_id = oldIds[item.file_id];
         }

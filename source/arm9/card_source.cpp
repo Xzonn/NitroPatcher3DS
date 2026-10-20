@@ -64,7 +64,15 @@ struct GameCard final : np3d::Source {
             uint32_t base = offset & ~511u;
             uint32_t take = std::min(length, 512 - offset % 512);
             if (base != blockOffset) {
-                cardRead(base, block, sizeof(block));
+                auto& header = *reinterpret_cast<sNDSHeaderExt*>(headerData);
+                require(header.unitCode == 0 || base <= header.romSize || isDSiMode(),
+                    "Reading DSi cartridge regions requires DSi mode");
+                uint32_t source = base;
+                uint32_t twlStart = uint32_t(header.twl_rom_region_start) * 0x80000u;
+                if (header.unitCode != 0 && twlStart != 0 && base >= twlStart && base - twlStart < 0x3000) {
+                    source = 0x8000 + (base - twlStart) % 0x1000;
+                }
+                cardRead(source, block, sizeof(block));
                 blockOffset = base;
             }
             std::memcpy(bytes, reinterpret_cast<uint8_t*>(block) + offset % 512, take);

@@ -17,6 +17,7 @@ with zipfile.ZipFile(resource_path, "w", zipfile.ZIP_DEFLATED, compresslevel=9) 
         ("LICENSE", "NitroPatcher3DS.txt"),
         ("vendor/md4c/LICENSE.md", "md4c.txt"),
         ("vendor/fmt/LICENSE", "fmt.txt"),
+        ("vendor/BlzHelper/LICENSE", "BlzHelper.txt"),
         ("assets/fonts/Gulim-OFL.txt", "Gulim-OFL.txt"),
         ("assets/fonts/Gulim-AUTHORS.txt", "Gulim-AUTHORS.txt"),
         ("/opt/np3d/liblzma/COPYING", "liblzma.txt"),

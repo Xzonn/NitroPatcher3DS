@@ -11,7 +11,7 @@
 namespace np3d {
 
 constexpr uint32_t FormatVersion = 1;
-constexpr uint32_t RulesVersion = 2;
+constexpr uint32_t RulesVersion = 3;
 constexpr uint32_t BufferSize = 65536;
 
 using FatalHandler = void (*)(const char*);

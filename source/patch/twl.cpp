@@ -1,4 +1,5 @@
 #include "rom.h"
+#include "twl.h"
 #include "mbedtls/aes.h"
 #include "mbedtls/md.h"
 #include <array>
@@ -10,15 +11,27 @@ static const uint8_t hmacKey[64] = {
     0x21,0x06,0xc0,0xde,0xba,0x98,0xce,0x3f,0xa6,0x92,0xe3,0x9d,0x46,0xf2,0xed,0x01,
     0x76,0xe3,0xcc,0x08,0x56,0x23,0x63,0xfa,0xca,0xd4,0xec,0xdf,0x9a,0x62,0x78,0x34,
     0x8f,0x6d,0x63,0x3c,0xfe,0x22,0xca,0x92,0x20,0x88,0x97,0x23,0xd2,0xcf,0xae,0xc2,
-    0x32,0x67,0x8d,0xfc,0xe2,0x83,0x64,0x98,0xac,0xfd,0x3e,0x37,0x87,0x46,0x58,0x24
+    0x32,0x67,0x8d,0xfe,0xca,0x83,0x64,0x98,0xac,0xfd,0x3e,0x37,0x87,0x46,0x58,0x24
 };
 
-static std::array<uint8_t, 20> hash(SourcePtr input, uint32_t offset, uint32_t length) {
+struct TwlHasher::State {
     mbedtls_md_context_t context;
-    mbedtls_md_init(&context);
-    require(mbedtls_md_setup(&context, mbedtls_md_info_from_type(MBEDTLS_MD_SHA1), 1) == 0
-        && mbedtls_md_hmac_starts(&context, hmacKey, sizeof(hmacKey)) == 0, "Cannot initialize TWL HMAC");
-    std::vector<uint8_t> buffer(std::min(BufferSize, std::max<uint32_t>(length, 1)));
+    std::vector<uint8_t> buffer;
+};
+
+TwlHasher::TwlHasher() : state(std::make_unique<State>()) {
+    mbedtls_md_init(&state->context);
+    require(mbedtls_md_setup(&state->context, mbedtls_md_info_from_type(MBEDTLS_MD_SHA1), 1) == 0
+        && mbedtls_md_hmac_starts(&state->context, hmacKey, sizeof(hmacKey)) == 0, "Cannot initialize TWL HMAC");
+}
+
+TwlHasher::~TwlHasher() { mbedtls_md_free(&state->context); }
+
+std::array<uint8_t, 20> TwlHasher::operator()(SourcePtr input, uint32_t offset, uint32_t length) {
+    auto& context = state->context;
+    auto& buffer = state->buffer;
+    buffer.resize(std::min(BufferSize, std::max<uint32_t>(length, 1)));
+    require(mbedtls_md_hmac_reset(&context) == 0, "Cannot reset TWL HMAC");
     for (uint32_t position = 0; position < length;) {
         uint32_t take = std::min<uint32_t>(buffer.size(), length - position);
         input->read(offset + position, buffer.data(), take);
@@ -27,8 +40,11 @@ static std::array<uint8_t, 20> hash(SourcePtr input, uint32_t offset, uint32_t l
     }
     std::array<uint8_t, 20> result;
     require(mbedtls_md_hmac_finish(&context, result.data()) == 0, "Cannot finish TWL HMAC");
-    mbedtls_md_free(&context);
     return result;
+}
+
+static std::array<uint8_t, 20> hash(SourcePtr input, uint32_t offset, uint32_t length) {
+    return TwlHasher()(input, offset, length);
 }
 
 static std::array<uint8_t, 16> key(const Header& h) {
@@ -98,6 +114,11 @@ static std::shared_ptr<Map> splice(Workspace& work, SourcePtr input, uint32_t of
     output->copy(input, offset + replacement->size, input->size - offset - replacement->size);
     output->finish();
     return output;
+}
+
+SourcePtr twlCrypt(Workspace& work, SourcePtr input, uint32_t offset, uint32_t length,
+    const Header& header, const uint8_t* counter) {
+    return crypt(work, input, offset, length, header, counter);
 }
 
 std::shared_ptr<Map> writeTwl(Workspace& work, std::shared_ptr<Map> output, SourcePtr original, Header& h, bool decrypted) {
