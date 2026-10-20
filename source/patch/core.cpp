@@ -474,13 +474,14 @@ std::string digest(SourcePtr input, bool crc32, const char* stage) {
         require(mbedtls_md5_starts_ret(&md5) == 0, "Cannot initialize digest");
     }
     mz_ulong crc = MZ_CRC32_INIT;
-    std::vector<uint8_t> buffer(BufferSize);
+    std::vector<uint8_t> storage(BufferSize + 31);
+    auto buffer = reinterpret_cast<uint8_t*>((reinterpret_cast<uintptr_t>(storage.data()) + 31) & ~uintptr_t(31));
     if (stage) progress(stage, 0, input->size, true);
     for (uint32_t offset = 0; offset < input->size;) {
         uint32_t length = std::min(BufferSize, input->size - offset);
-        input->read(offset, buffer.data(), length);
-        if (crc32) crc = mz_crc32(crc, buffer.data(), length);
-        else require(mbedtls_md5_update_ret(&md5, buffer.data(), length) == 0, "Cannot update digest");
+        input->read(offset, buffer, length);
+        if (crc32) crc = mz_crc32(crc, buffer, length);
+        else require(mbedtls_md5_update_ret(&md5, buffer, length) == 0, "Cannot update digest");
         offset += length;
         if (stage) progress(stage, offset, input->size, true);
     }

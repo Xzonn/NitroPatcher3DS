@@ -12,7 +12,7 @@ namespace {
 struct GameCard final : np3d::Source {
     alignas(4) uint8_t prefix[0x8000] = {};
     alignas(4) uint8_t headerData[0x1000] = {};
-    alignas(4) uint32_t block[128];
+    alignas(32) uint32_t block[1024];
     alignas(4) uint32_t identity[128];
     uint32_t blockOffset = UINT32_MAX;
 
@@ -61,21 +61,25 @@ struct GameCard final : np3d::Source {
             length -= take;
         }
         while (length) {
-            uint32_t base = offset & ~511u;
-            uint32_t take = std::min(length, 512 - offset % 512);
-            if (base != blockOffset) {
-                auto& header = *reinterpret_cast<sNDSHeaderExt*>(headerData);
-                require(header.unitCode == 0 || base <= header.romSize || isDSiMode(),
-                    "Reading DSi cartridge regions requires DSi mode");
-                uint32_t source = base;
-                uint32_t twlStart = uint32_t(header.twl_rom_region_start) * 0x80000u;
-                if (header.unitCode != 0 && twlStart != 0 && base >= twlStart && base - twlStart < 0x3000) {
-                    source = 0x8000 + (base - twlStart) % 0x1000;
-                }
-                cardRead(source, block, sizeof(block));
-                blockOffset = base;
+            uint32_t base = offset & ~0xfffu;
+            uint32_t take = std::min(length, 4096 - offset % 4096);
+            auto& header = *reinterpret_cast<sNDSHeaderExt*>(headerData);
+            require(header.unitCode == 0 || base <= header.romSize || isDSiMode(),
+                "Reading DSi cartridge regions requires DSi mode");
+            uint32_t source = base;
+            uint32_t twlStart = uint32_t(header.twl_rom_region_start) * 0x80000u;
+            if (header.unitCode != 0 && twlStart != 0 && base >= twlStart && base - twlStart < 0x3000) {
+                source = 0x8000 + (base - twlStart) % 0x1000;
             }
-            std::memcpy(bytes, reinterpret_cast<uint8_t*>(block) + offset % 512, take);
+            if (offset == base && take == sizeof(block) && (reinterpret_cast<uintptr_t>(bytes) & 31) == 0) {
+                cardRead(source, reinterpret_cast<uint32_t*>(bytes), take);
+            } else {
+                if (base != blockOffset) {
+                    cardRead(source, block, sizeof(block));
+                    blockOffset = base;
+                }
+                std::memcpy(bytes, reinterpret_cast<uint8_t*>(block) + offset % 4096, take);
+            }
             bytes += take;
             offset += take;
             length -= take;

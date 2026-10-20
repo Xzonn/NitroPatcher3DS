@@ -59,6 +59,10 @@ $(BUILD)/prepare-mode: prepare-mode | $(BUILD)
 
 $(OBJECTS): $(BUILD)/prepare-mode
 
+ifeq ($(MODE),arm9)
+$(BUILD)/md5.o: CFLAGS += -marm
+endif
+
 $(BUILD):
 	mkdir -p $@
 
