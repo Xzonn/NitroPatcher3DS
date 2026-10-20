@@ -117,15 +117,16 @@ int main(int argc,char** argv) {
     ui::chooseInitialLanguage();
 
     alignas(4) unsigned char header[0x200];
-    bool hasCard=false, cardInterfaceReady=false, reinsert=false;
+    bool hasCard=false, cardInterfaceReady=false, reinsert=false, readCard=true;
     const auto* gameHeader=reinterpret_cast<const sNDSHeader*>(header);
     np3d::SourcePtr persistentCard;
     uint32_t persistentChipId=0;
-    ui::noCard();
 
     while (true) {
         swiWaitForVBlank();
-        ui::Action action=ui::update();
+        bool automatic=readCard;
+        ui::Action action=automatic?ui::Action::ReadCard:ui::update();
+        readCard=false;
         if (action==ui::Action::None) continue;
         if (action==ui::Action::Report) {
             ui::report(true);dumpEnvironment();ui::report(false);continue;
@@ -133,10 +134,11 @@ int main(int argc,char** argv) {
         if (action==ui::Action::RepairStorage) {ui::repairStorage();continue;}
         if (action==ui::Action::ChangeCard) {
             persistentCard.reset();persistentChipId=0;hasCard=false;reinsert=true;
-            ui::noCard(false,true);continue;
+            readCard=true;continue;
         }
         if (action==ui::Action::ReadCard) {
             if (isDSiMode()) {
+                if (REG_SCFG_MC & BIT(0)) {ui::noCard(!automatic,reinsert);continue;}
                 if (!cardInterfaceReady) {
                     fifoSendValue32(FIFO_USER_02,1);
                     fifoSendValue32(FIFO_USER_07,1);
@@ -149,7 +151,7 @@ int main(int argc,char** argv) {
             std::memset(header,0xff,sizeof(header));
             cardReadHeader(header);
             if (swiCRC16(0xffff,header,0x15e)!=gameHeader->headerCRC16) {
-                ui::noCard(true,reinsert);continue;
+                ui::noCard(!automatic,reinsert);continue;
             }
             np3d::require(gameHeader->unitCode!=3,"This Game Card requires DSi mode.");
 #if NP3D_DIAGNOSTIC
