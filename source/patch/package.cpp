@@ -16,7 +16,7 @@ static size_t readArchive(void* opaque, mz_uint64 offset, void* output, size_t l
 }
 #endif
 
-Package::Package(const std::string& path, Workspace& directory) : work(directory) {
+Package::Package(const std::string& path) {
     logPreparation("ZIP open begin " + path);
     require(mz_zip_reader_init_file(&archive, path.c_str(), 0), "Cannot open XZP archive");
 #if NP3D_PREPARE_TRACE
@@ -39,14 +39,23 @@ Package::Package(const std::string& path, Workspace& directory) : work(directory
         std::string name(info.m_full_filename, info.m_full_filename_size);
         bool ascii = std::all_of(name.begin(), name.end(), [](unsigned char byte) { return byte < 128; });
         if (!ascii) name = convert(name, info.m_filename_utf8 ? "UTF-8" : "CP437");
-        name = normalize(name);
+        for (char& byte : name) if (byte == '\\') byte = '/';
+        std::string key = normalize(name);
         NP3D_PREPARE_LOG("ZIP entry=" + std::to_string(index) + " name=" + name + " method=" + std::to_string(info.m_method)
             + " compressed=" + std::to_string(info.m_comp_size) + " size=" + std::to_string(info.m_uncomp_size)
             + " crc32=" + std::to_string(info.m_crc32) + " header=" + std::to_string(info.m_local_header_ofs));
-        if (!name.empty() && name.back() != '/') entries[name] = index;
+        if (!name.empty() && name.back() != '/') {
+            entries[key] = {index, std::move(name)};
+        }
         progress("Reading patch directory", index + 1, count);
     }
+    if (has("metadata.json")) {
+        auto data = bytes("metadata.json");
+        metadata = readPatchMetadata(std::string(data.begin(), data.end()));
+    }
 }
+
+Package::Package(const std::string& path, Workspace& directory) : Package(path) { work = &directory; }
 
 Package::~Package() {
     NP3D_PREPARE_LOG("ZIP close begin");
@@ -70,10 +79,10 @@ struct Entry final : Source {
         auto found = package.entries.find(normalize(name));
         require(found != package.entries.end(), "Missing XZP entry: " + name);
         mz_zip_archive_file_stat info;
-        require(mz_zip_reader_file_stat(&package.archive, found->second, &info), "Cannot read XZP directory");
+        require(mz_zip_reader_file_stat(&package.archive, found->second.index, &info), "Cannot read XZP directory");
         size = info.m_uncomp_size;
         logPreparation("EXTRACT begin name=" + name + " bytes=" + std::to_string(size));
-        iterator = mz_zip_reader_extract_iter_new(&package.archive, found->second, 0);
+        iterator = mz_zip_reader_extract_iter_new(&package.archive, found->second.index, 0);
         require(iterator, "Cannot initialize XZP extraction: " + name);
         progress("Extracting patch file", 0, size, true, name.c_str());
     }
@@ -111,7 +120,7 @@ std::vector<uint8_t> Package::bytes(const std::string& name) {
 
 SourcePtr Package::delta(const std::string& name, SourcePtr source, const std::string& label) {
     auto input = std::make_shared<Entry>(*this, name);
-    auto result = applyDelta(work, source, input, label);
+    auto result = applyDelta(*work, source, input, label);
     if (result) input->verify();
     return result;
 }
@@ -121,7 +130,7 @@ SourcePtr Package::replace(const std::string& name, SourcePtr source) {
     if (has(patch)) return delta(patch, source, name);
     if (!has(name)) return source;
     Entry input(*this, name);
-    auto result = work.map();
+    auto result = work->map();
     std::vector<uint8_t> buffer(BufferSize);
     progress("Applying replacement", 0, input.size, true, name.c_str());
     for (uint32_t offset = 0; offset < input.size;) {

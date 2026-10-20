@@ -12,7 +12,15 @@ struct NamedFile {
     uint32_t id;
     uint32_t offset;
     uint32_t length;
+    std::string rawName;
+    uint32_t directory = 0;
 };
-std::vector<NamedFile> enumerateFiles(SourcePtr source, const Header& header);
+struct NamedDirectory {
+    std::string name, rawName;
+    uint32_t parent;
+    std::vector<uint32_t> files, children;
+};
+std::vector<NamedFile> enumerateFiles(SourcePtr source, const Header& header, bool canonical = false,
+    std::vector<NamedDirectory>* directories = nullptr);
 
 }

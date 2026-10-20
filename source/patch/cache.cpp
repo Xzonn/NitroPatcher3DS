@@ -181,6 +181,11 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
     logPreparation("CARD identity=" + identity + " md5=" + romMd5 + " size=" + std::to_string(card->size));
     std::string patchCrc = digest(patch, true, "Reading patch");
     patch.reset();
+    std::unique_ptr<Package> archive;
+    if (!isDeltaPatch(path)) {
+        archive = std::make_unique<Package>(path);
+        if (!archive->metadata.error.empty()) return {"", nullptr, false, archive->metadata.error, false};
+    }
     makeDirectory(root + "/cache/" + cardKey);
     std::string directory = root + "/cache/" + cardKey + "/" + patchCrc;
     logPreparation("CACHE directory=" + directory + " patchCrc32=" + patchCrc);
@@ -210,7 +215,8 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
             std::shared_ptr<Map> virtualRom;
             if (isDeltaPatch(path)) virtualRom = applyDelta(work, card, path, path.substr(path.find_last_of('/') + 1));
             else {
-                Package package(path, work);
+                Package& package = *archive;
+                package.work = &work;
                 if (package.needsMd5()) romMd5 = cardDigest(card, root, identity);
                 if (package.has("md5.txt")) {
                     auto bytes = package.bytes("md5.txt");
@@ -232,12 +238,7 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
                     if (!matched) {error="XZP does not match this Game Card (MD5 mismatch)";mismatch=true;return false;}
                     logPreparation("MD5 matched " + romMd5);
                 }
-                if (package.has("metadata.json")) {
-                    auto data = package.bytes("metadata.json");
-                    data.push_back(0);
-                    Json metadata(cJSON_ParseWithLength(reinterpret_cast<const char*>(data.data()), data.size()), cJSON_Delete);
-                    patchId = text(metadata.get(), "id");
-                }
+                patchId = package.metadata.id;
                 SourcePtr original = card;
                 std::string preprocessing = "preprocessing/" + romMd5 + ".xdelta";
                 if (package.has(preprocessing)) original = package.delta(preprocessing, original, "Game preprocessing");
@@ -304,6 +305,10 @@ Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const st
             "Place patches in nitro-patcher/patches");
         hashes += digest(std::make_shared<Disk>(path), true, "Reading patch") + "\n";
         names += path.substr(path.find_last_of('/') + 1) + "\n";
+        if (!isDeltaPatch(path)) {
+            Package package(path);
+            if (!package.metadata.error.empty()) return {"", nullptr, false, package.metadata.error, false};
+        }
     }
     std::string patchCrc = digest(hashes.data(), hashes.size(), true);
     makeDirectory(root + "/cache/" + cardKey);

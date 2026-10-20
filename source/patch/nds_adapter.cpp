@@ -1,4 +1,5 @@
 #include "nds_adapter.h"
+#include "filename.h"
 #include <cstring>
 #include <set>
 
@@ -9,6 +10,7 @@ char* filerootdir = nullptr;
 char* filemasks[MAX_FILEMASKS] = {};
 int filemask_num = 0;
 void (*ndsFileVisitor)(const char*, const char*, unsigned int, unsigned int, unsigned int);
+void (*ndsDirectoryVisitor)(const char*, unsigned int, unsigned int, bool);
 extern void ExtractDirectory(const char*, unsigned int);
 static std::set<unsigned int> directories;
 
@@ -30,14 +32,43 @@ struct Cookie {
 
 static std::vector<NamedFile>* files;
 static std::vector<bool> visitedFiles;
+static bool canonicalNames;
+static std::vector<NamedDirectory>* tree;
+static std::vector<uint32_t> directoryIndices;
+static uint32_t currentDirectory;
+
+static void directory(const char* prefix, unsigned int id, unsigned int count, bool entering) {
+    if (!entering) return;
+    uint32_t parent = id == 0xf000 ? UINT32_MAX : directoryIndices.at(count & 0xfff);
+    require(id == 0xf000 || parent != UINT32_MAX, "Missing FNT parent directory");
+    std::string path(prefix), raw;
+    if (path.size() > 1) {
+        path.pop_back();
+        raw = path.substr(path.find_last_of('/') + 1);
+    }
+    std::string name = parent == UINT32_MAX ? "data" : decodeName(raw);
+    require(name.find_first_of("/\\") == std::string::npos && name != "." && name != "..", "Invalid FNT path component");
+    uint32_t index = tree->size();
+    tree->push_back({name, raw, parent, {}, {}});
+    if (parent != UINT32_MAX) (*tree)[parent].children.push_back(index);
+    directoryIndices[id & 0xfff] = index;
+    currentDirectory = index;
+}
 
 static void visit(const char* prefix, const char* name, unsigned int id, unsigned int offset, unsigned int length) {
     require(id < uint32_t(header.fat_size) / 8, "NDS file ID outside FAT");
     require(!visitedFiles[id], "Duplicate NDS file ID");
     visitedFiles[id] = true;
     std::string path = std::string(prefix) + name;
-    if (std::any_of(path.begin(), path.end(), [](unsigned char byte) { return byte >= 128; })) path = convert(path, "CP932");
-    files->push_back({"data" + path, id, offset, length});
+    if (std::any_of(path.begin(), path.end(), [](unsigned char byte) { return byte >= 128; }))
+        path = canonicalNames ? decodeName(path) : convert(path, "CP932");
+    uint32_t parent = tree ? currentDirectory : 0;
+    if (tree) {
+        auto decoded = decodeName(name);
+        require(decoded.find_first_of("/\\") == std::string::npos && decoded != "." && decoded != "..", "Invalid FNT path component");
+        (*tree)[parent].files.push_back(files->size());
+    }
+    files->push_back({"data" + path, id, offset, length, canonicalNames ? name : "", parent});
 }
 
 #ifdef ARM9
@@ -71,7 +102,8 @@ static int seekCookie(void* opaque, off64_t* offset, int origin) {
 }
 #endif
 
-std::vector<NamedFile> enumerateFiles(SourcePtr source, const Header& value) {
+std::vector<NamedFile> enumerateFiles(SourcePtr source, const Header& value, bool canonical,
+    std::vector<NamedDirectory>* outputDirectories) {
     Cookie cookie{source};
 #ifdef ARM9
     fNDS = funopen(&cookie, readCookie, nullptr, seekCookie, nullptr);
@@ -81,15 +113,25 @@ std::vector<NamedFile> enumerateFiles(SourcePtr source, const Header& value) {
 #endif
     require(fNDS, "Cannot open NDS directory reader");
     header = value;
+    canonicalNames = canonical;
+    std::vector<NamedDirectory> localDirectories;
+    tree = canonical ? (outputDirectories ? outputDirectories : &localDirectories) : nullptr;
+    directoryIndices.assign(tree ? 4096 : 0, UINT32_MAX);
+    if (tree) tree->clear();
     directories.clear();
     visitedFiles.assign(uint32_t(header.fat_size) / 8, false);
     std::vector<NamedFile> result;
     files = &result;
     ndsFileVisitor = visit;
+    ndsDirectoryVisitor = tree ? directory : nullptr;
     ExtractDirectory("/", 0xf000);
     require(!std::ferror(fNDS), "Cannot read NDS directory");
     require(std::fclose(fNDS) == 0, "Cannot close NDS directory reader");
     ndsFileVisitor = nullptr;
+    ndsDirectoryVisitor = nullptr;
+    tree = nullptr;
+    directoryIndices.clear();
+    directoryIndices.shrink_to_fit();
     for (const auto& file : result) require(file.offset <= source->size && file.length <= source->size - file.offset,
         "NDS file outside ROM: " + file.name);
     return result;

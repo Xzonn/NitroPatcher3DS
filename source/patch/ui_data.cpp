@@ -1,4 +1,5 @@
 #include "ui_data.h"
+#include "package.h"
 #include "miniz.h"
 #include "cJSON.h"
 #include "md4c.h"
@@ -8,6 +9,7 @@ extern "C" {
 #include "uni_algo/conv.h"
 #include <cstring>
 #include <cstdlib>
+#include <cmath>
 #include <unistd.h>
 
 namespace np3d {
@@ -53,46 +55,58 @@ std::string plainMarkdown(const std::string& input) {
     return output;
 }
 
-std::string entry(mz_zip_archive& archive, const char* name) {
-    int index = mz_zip_reader_locate_file(&archive, name, nullptr, 0);
-    if (index < 0) return "";
-    auto iterator=mz_zip_reader_extract_iter_new(&archive,index,0);
-    require(iterator,"Cannot extract patch information");
-    std::string result;
-    std::vector<char> buffer(BufferSize);
-    while (true) {
-        size_t size=mz_zip_reader_extract_iter_read(iterator,buffer.data(),buffer.size());
-        require(iterator->status>=TINFL_STATUS_DONE,"Cannot decode patch information");
-        if (!size) break;
-        result.append(buffer.data(),size);
-    }
-    require(mz_zip_reader_extract_iter_free(iterator),"Cannot verify patch information");
-    una::error error;
-    una::strict::utf8to32u(result, error);
-    require(!error, "Patch information is not UTF-8");
-    return result;
 }
+
+PatchInfo readPatchMetadata(const std::string& data) {
+    una::error error;
+    una::strict::utf8to32u(data, error);
+    if (error) return {};
+    const char* end = nullptr;
+    Json json(cJSON_ParseWithLengthOpts(data.c_str(), data.size() + 1, &end, true), cJSON_Delete);
+    if (!cJSON_IsObject(json.get()) || end != data.c_str() + data.size()) return {};
+    PatchInfo result;
+    auto property = [&](const char* name) -> const cJSON* {
+        const cJSON* found = nullptr;
+        for (auto item = json->child; item; item = item->next)
+            if (item->string && std::strcmp(item->string, name) == 0) found = item;
+        return found;
+    };
+    auto string = [&](const char* name) {
+        auto item = property(name);
+        return std::string(cJSON_IsString(item) ? item->valuestring : "");
+    };
+    auto version = property("formatVersion");
+    if (version) {
+        double value = version->valuedouble;
+        if (!cJSON_IsNumber(version) || !std::isfinite(value) || value < 1 || value > 9007199254740991.0 || std::floor(value) != value)
+            result.error = "metadata.json formatVersion must be a positive safe integer";
+        else if (value != 1 && value != 2) result.error = "Unsupported XZP format version";
+        else result.formatVersion = uint32_t(value);
+    }
+    result.id = string("id");
+    result.name = string("name");
+    result.author = string("author");
+    result.homepage = string("homepage");
+    result.version = string("version");
+    result.beta = cJSON_IsTrue(property("isBeta"));
+    return result;
 }
 
 PatchInfo inspectPatch(const std::string& path) {
     if (isDeltaPatch(path)) return {};
-    auto archive = std::make_unique<mz_zip_archive>();
-    *archive = {};
-    require(mz_zip_reader_init_file(archive.get(), path.c_str(), 0), "Cannot open XZP archive");
-    PatchInfo result;
-    std::string metadata = entry(*archive, "metadata.json");
-    if (!metadata.empty()) {
-        Json json(cJSON_ParseWithLength(metadata.c_str(), metadata.size() + 1), cJSON_Delete);
-        result.name = text(json.get(), "name");
-        result.author = text(json.get(), "author");
-        result.homepage = text(json.get(), "homepage");
-        result.version = text(json.get(), "version");
-        result.beta = cJSON_IsTrue(cJSON_GetObjectItemCaseSensitive(json.get(), "isBeta"));
+    Package package(path);
+    PatchInfo result = package.metadata;
+    if (!result.error.empty()) return result;
+    for (const char* name : {"README.md", "README.txt"}) {
+        if (!package.has(name)) continue;
+        auto bytes = package.bytes(name);
+        std::string content(bytes.begin(), bytes.end());
+        una::error error;
+        una::strict::utf8to32u(content, error);
+        require(!error, "Patch information is not UTF-8");
+        result.readme = name[7] == 'm' ? plainMarkdown(content) : content;
+        break;
     }
-    if (mz_zip_reader_locate_file(archive.get(), "README.md", nullptr, 0) >= 0)
-        result.readme = plainMarkdown(entry(*archive, "README.md"));
-    else result.readme = entry(*archive, "README.txt");
-    require(mz_zip_reader_end(archive.get()), "Cannot close XZP archive");
     return result;
 }
 

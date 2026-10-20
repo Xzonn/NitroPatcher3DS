@@ -387,6 +387,7 @@ void command(Command value,int argument=0) {
         if (state.patches.empty()) break;
         state.homeFocus=state.focus;state.homeTop=state.top;
         state.info=np3d::inspectPatch(state.patches[state.focus]);
+        if (!state.info.error.empty()) {error(state.info.error,false);break;}
         state.lines=wrap(una::utf8to16u(state.info.readme.empty()?tr(Text::NoReadme):state.info.readme),228);
         go(Page::PatchInfo);break;
     case Command::Details: state.lines=wrap(una::utf8to16u(state.detail),228);go(Page::Details);break;

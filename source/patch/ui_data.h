@@ -7,7 +7,10 @@ namespace np3d {
 struct PatchInfo {
     std::string name, author, homepage, version, readme;
     bool beta = false;
+    uint32_t formatVersion = 1;
+    std::string id, error;
 };
+PatchInfo readPatchMetadata(const std::string& data);
 PatchInfo inspectPatch(const std::string& path);
 
 struct Settings {
