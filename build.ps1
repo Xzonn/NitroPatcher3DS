@@ -31,16 +31,16 @@ try {
             throw "CIA tool setup failed with exit code $LASTEXITCODE."
         }
     }
-    & $ciaTool --srl=out/NitroPatcher3DS.nds --micro=1
+    & $ciaTool --srl=out/NitroPatcherDSi.nds -o out/NitroPatcher3DS.cia --micro=1
     if ($LASTEXITCODE -ne 0) {
         throw "CIA packaging failed with exit code $LASTEXITCODE."
     }
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     foreach ($target in @(
-        @{ Package = "NitroPatcher3DS.zip"; Source = "NitroPatcher3DS.cia"; Entry = "NitroPatcher3DS.cia" },
-        @{ Package = "NitroPatcherDSi.zip"; Source = "NitroPatcher3DS.nds"; Entry = "nitro-patcher/app/NitroPatcher3DS.nds" },
-        @{ Package = "NitroPatcherNDS.zip"; Source = "NitroPatcherNDS.nds"; Entry = "BOOT.NDS" }
-    )) {
+            @{ Package = "NitroPatcher3DS.zip"; Source = "NitroPatcher3DS.cia"; Entry = "NitroPatcher3DS.cia" },
+            @{ Package = "NitroPatcherDSi.zip"; Source = "NitroPatcherDSi.nds"; Entry = "nitro-patcher/app/NitroPatcherDSi.nds" },
+            @{ Package = "NitroPatcherDS.zip"; Source = "NitroPatcherDS.nds"; Entry = "BOOT.NDS" }
+        )) {
         $package = [IO.Compression.ZipArchive]::new(
             [IO.File]::Create("$projectRoot/out/$($target.Package)"),
             [IO.Compression.ZipArchiveMode]::Create
@@ -56,10 +56,10 @@ try {
                 $package, "$projectRoot/out/$($target.Source)", $target.Entry
             )
             [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
-                $package, "$projectRoot/docs/usage.md", "使用说明.md"
+                $package, "$projectRoot/docs/usage.zh-hans.md", "使用说明.md"
             )
             [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
-                $package, "$projectRoot/docs/usage.en.md", "User Guide.md"
+                $package, "$projectRoot/docs/usage.md", "User Guide.md"
             )
         }
         finally {

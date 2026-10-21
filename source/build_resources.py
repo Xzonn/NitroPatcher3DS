@@ -14,7 +14,7 @@ with zipfile.ZipFile(resource_path, "w", zipfile.ZIP_DEFLATED, compresslevel=9) 
     for path in sorted(glob.glob("texts/*.json")):
         archive.write(path, f"languages/{path[6:]}")
     for path, name in (
-        ("LICENSE", "NitroPatcher3DS.txt"),
+        ("LICENSE", "NitroPatcherDS.txt"),
         ("vendor/md4c/LICENSE.md", "md4c.txt"),
         ("vendor/fmt/LICENSE", "fmt.txt"),
         ("vendor/BlzHelper/LICENSE", "BlzHelper.txt"),

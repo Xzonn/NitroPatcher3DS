@@ -18,7 +18,7 @@ enum class Command { Toggle, Start, Menu, Info, Back, Language, Original, Report
 constexpr Text MenuLabels[] = {Text::Original,Text::ChangeCard,Text::Report,Text::Language,Text::StorageTitle,Text::About};
 constexpr Command MenuCommands[] = {Command::Original,Command::ChangeCard,Command::Report,Command::Language,Command::RepairStorage,Command::About};
 constexpr int MenuCount = sizeof(MenuCommands)/sizeof(MenuCommands[0]);
-constexpr const char* Licenses[] = {"NitroPatcher3DS.txt", "md4c.txt", "fmt.txt", "Gulim-OFL.txt", "Gulim-AUTHORS.txt", "liblzma.txt"};
+constexpr const char* Licenses[] = {"NitroPatcherDS.txt", "md4c.txt", "fmt.txt", "Gulim-OFL.txt", "Gulim-AUTHORS.txt", "liblzma.txt"};
 constexpr int LicenseCount = sizeof(Licenses)/sizeof(Licenses[0]);
 struct Hit { int x, y, width, height; Command command; int argument; };
 struct State {
@@ -155,7 +155,7 @@ void go(Page page) {
     }
 }
 void upper() {
-    text(0,"NitroPatcher3DS by Xzonn",8,8);
+    text(0,"NitroPatcherDS by Xzonn",8,8);
     auto version=una::utf8to16u(NP3D_VERSION);
     text16(0,version,248-width(version),8);
     fill(0,0,26,256,1,Black);
@@ -180,7 +180,7 @@ void upper() {
         }
         if (y==58) text(0,tr(Text::NoMetadata),8,y);
     } else if (state.page==Page::About || state.page==Page::Licenses || state.page==Page::LicenseText) {
-        text(0,"NitroPatcher3DS",8,44);text(0,format(Text::AboutAuthor,fmt::arg("author","Xzonn")),8,72);
+        text(0,"NitroPatcherDS",8,44);text(0,format(Text::AboutAuthor,fmt::arg("author","Xzonn")),8,72);
         text(0,format(Text::AboutVersion,fmt::arg("version",NP3D_VERSION)),8,100);
         text(0,format(Text::License,fmt::arg("license","GPL v3")),8,128);
         if (state.page==Page::LicenseText) scrollText(0,Licenses[state.licenseFocus],8,160,240,true);

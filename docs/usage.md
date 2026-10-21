@@ -1,129 +1,125 @@
-# NitroPatcher3DS 使用说明
+# NitroPatcherDS User Guide
 
-NitroPatcher3DS 可以在 3DS／2DS、DSi／DSi LL（XL），以及使用 SuperCard miniSD 的 NDS／NDS Lite 上为 NDS 游戏卡带应用汉化等补丁。游戏运行时从卡带和存储卡读取内容，存档直接读写原卡带。
+NitroPatcherDS applies translation patches and other modifications to NDS game cartridges on a 3DS, 2DS, DSi, DSi XL (LL), or an NDS / NDS Lite with a SuperCard miniSD. Games read data from both the cartridge and the storage card, and save directly to the original cartridge.
 
-## 安装
+## Installation
 
-### 3DS／2DS
+### 3DS / 2DS
 
-需要一台已安装 Luma3DS 和 FBI 的 3DS／2DS，以及与补丁对应的 NDS 游戏卡带。
+You need a 3DS or 2DS with Luma3DS and FBI installed, and an NDS game cartridge compatible with your patch.
 
-1. 解压 `NitroPatcher3DS.zip`，将其中的 `NitroPatcher3DS.cia` 和 `nitro-patcher` 文件夹复制到 SD 卡根目录。
-2. 将补丁文件放入 SD 卡的 `nitro-patcher/patches/` 文件夹。文件夹中的 `Place patches here` 是空白提示文件。
-3. 把 SD 卡装回主机，使用 FBI 安装 `NitroPatcher3DS.cia`。
-4. 插入游戏卡带，从 HOME 菜单打开 NitroPatcher3DS。
+1. Extract `NitroPatcher3DS.zip` and copy `NitroPatcher3DS.cia` and the `nitro-patcher` folder to the root of your SD card.
+2. Put your patch files in `nitro-patcher/patches/` on the SD card. The empty file named `Place patches here` marks this folder.
+3. Put the SD card back in your console and install `NitroPatcher3DS.cia` using FBI.
+4. Insert your game cartridge and open NitroPatcherDS from the HOME Menu.
 
-### DSi／DSi LL（XL）
+### DSi / DSi XL (LL)
 
-需要一台已安装 Unlaunch 的 DSi，以及与补丁对应的 NDS 游戏卡带。Unlaunch 的安装方法见 [DSi Guide](https://dsi.cfw.guide/installing-unlaunch.html)。
+You need a DSi with Unlaunch installed, and an NDS game cartridge compatible with your patch. See [DSi Guide](https://dsi.cfw.guide/installing-unlaunch.html) for Unlaunch installation instructions.
 
-1. 解压 `NitroPatcherDSi.zip`，将其中的 `nitro-patcher` 文件夹复制到主机 SD 卡根目录。
-2. 将补丁文件放入 `nitro-patcher/patches/` 文件夹。
-3. 把 SD 卡装回主机，插入游戏卡带，按住 A＋B 开机进入 Unlaunch 文件菜单。
-4. 选择 NitroPatcher3DS，确认下屏幕显示的路径为 `sdmc:/nitro-patcher/app/NitroPatcher3DS.nds`，按 A 启动。
+1. Extract `NitroPatcherDSi.zip` and copy the `nitro-patcher` folder to the root of the console's SD card.
+2. Put your patch files in `nitro-patcher/patches/`.
+3. Put the SD card back in your console, insert the game cartridge, and turn on the console while holding A + B to open Unlaunch's Filemenu.
+4. Select NitroPatcherDS, check that the bottom screen shows `sdmc:/nitro-patcher/app/NitroPatcherDSi.nds`, and press A to launch it.
 
-需要设置快捷启动时，在 Unlaunch 的 `OPTIONS` 中将一个 `BUTTON A / B / X / Y` 选项指定为该程序，再选择 `SAVE & EXIT` 保存。以后按住对应按键开机即可打开程序。
+To assign a startup shortcut, open Unlaunch's `OPTIONS`, assign the app to one of the `BUTTON A / B / X / Y` options, then choose `SAVE & EXIT`. Hold that button while turning on the console to open the app.
 
-也可以从 TWiLight Menu++ 选择 `nitro-patcher/app/NitroPatcher3DS.nds` 启动，将该程序的运行模式设为 DSi 模式、RAM disk 设为 None。如果加载器锁定了硬件访问权限，程序会自动通过 Unlaunch 重新启动，再进入卡带识别界面。补丁和程序都放在主机 SD 卡中，游戏卡带留在卡槽内。
+You can also select `nitro-patcher/app/NitroPatcherDSi.nds` in TWiLight Menu++. Set the app to run in DSi mode with RAM disk set to None. If the loader locks hardware access, the app automatically restarts through Unlaunch before showing the cartridge prompt. Keep the app and patches on the console's SD card, with the game cartridge in Slot-1.
 
-### NDS／NDS Lite（SuperCard miniSD）
+### NDS / NDS Lite (SuperCard miniSD)
 
-需要支持 DS 模式的 SuperCard miniSD、SuperFW，以及能够通过 FlashMe 进入 DS 模式的主机。
+You need a DS-mode-compatible SuperCard miniSD running SuperFW, and a console with FlashMe configured to boot Slot-2 in DS mode.
 
-1. 解压 `NitroPatcherNDS.zip`，将 `BOOT.NDS` 和 `nitro-patcher` 文件夹复制到 SuperCard 存储卡根目录。已有 `BOOT.NDS` 时先备份原文件。此包的 `BOOT.NDS` 是程序本体，字体和翻译包含在其中，请保留文件名称与位置。
-2. 将补丁文件放入 `nitro-patcher/patches/` 文件夹。
-3. 保持 Slot-1 为空，通过 FlashMe 以 DS 模式启动 SuperCard。SuperFW 会加载 `BOOT.NDS`。
-4. 首次运行时选择语言，出现卡带提示后插入对应的正版 NDS 卡带，按 A 识别。没有检测到卡带时，可以插好后再次按 A。
-5. 选择补丁，按 START 准备并启动游戏。运行期间保持 SuperCard 和游戏卡带插入。
+1. Extract `NitroPatcherDS.zip` and copy `BOOT.NDS` and the `nitro-patcher` folder to the root of the SuperCard's storage card. Back up any existing `BOOT.NDS` first. `BOOT.NDS` contains the app, fonts and translations. Keep its name and location.
+2. Put your patches in `nitro-patcher/patches/`.
+3. Leave Slot-1 empty and use FlashMe to start the SuperCard in DS mode. SuperFW loads `BOOT.NDS`.
+4. Select your language on first launch, then insert the matching retail NDS cartridge when the cartridge prompt appears and press A to read it. If no cartridge is found, check that it is inserted and press A again.
+5. Select your patches and press START to prepare and launch the game. Keep both cartridges inserted while playing.
 
-如果进入程序时 Slot-1 已有卡带，按 A 后仍然无法识别，请取出并重新插入游戏卡带，再按 A。
+If Slot-1 already contained a cartridge at startup and pressing A does not identify it, remove and reinsert the game cartridge, then press A again.
 
-补丁、配置和缓存都保存在 SuperCard 存储卡的 `nitro-patcher` 子目录中。程序内的 `sd:/` 路径也指向这张存储卡。
+Patches, settings and cache files are stored under `nitro-patcher` on the SuperCard's storage card. The app's `sd:/` paths refer to this card as well.
 
-### 补丁目录
+### Patch folder
 
-补丁需要直接放在 `patches` 文件夹内，程序只读取这一层的补丁文件。
+Put patches directly in the `patches` folder. The app only lists patch files at this level.
 
-## 支持的补丁
+## Supported patches
 
-| 扩展名 | 内容 |
-| --- | --- |
-| `.xzp` | NitroPatcher 格式的补丁包 |
-| `.zip` | 内部结构与 XZP 相同的补丁包 |
-| `.xdelta` | 针对整份 ROM 制作的 xdelta／VCDIFF 差分补丁 |
+| Extension | Contents                                                |
+| --------- | ------------------------------------------------------- |
+| `.xzp`    | A NitroPatcher patch package                            |
+| `.zip`    | A patch package with the same internal structure as XZP |
+| `.xdelta` | An xdelta/VCDIFF patch made for a complete ROM          |
 
-XZP 补丁包可以直接使用，无需解压。ZIP 补丁包需要符合 XZP 的内部结构。下载包中另行附带的 `.xdelta` 文件，应取出后放入补丁目录。
+XZP packages can be used directly without extracting them. ZIP packages must follow the XZP structure. If a download contains a separate `.xdelta` file, extract that file and put it in the patch folder.
 
-支持 XZP 格式 1 和格式 2。格式 2 可以新增游戏文件与 ARM9／ARM7 覆盖模块，后续补丁也可以继续修改这些新增内容。格式由补丁包的 `metadata.json` 声明，无需手动设置。
+Check that your cartridge matches the game region and revision required by the patch.
 
-3DS 和 DSi 可以准备 DSi 增强游戏的格式 2 补丁，包括 DSi 程序及相关摘要。游戏仍以 DS 模式启动；DSi 独占游戏和 DSiWare 不在支持范围内。NDS／NDS Lite 当前无法提供完整的 TWL 区域，不能准备这类完整 DSi 补丁，普通 NDS 游戏的格式 2 补丁可以使用。
+## Selecting patches and starting a game
 
-选择补丁前，请确认补丁要求的游戏地区和版本与卡带一致。
+The first time you open the app, choose an interface language. Move up or down to preview each language, then press A to confirm.
 
-## 选择补丁并启动
+At the cartridge prompt, insert your game cartridge and press A to read it. Once it has been read, the top screen shows the game icon and title. The bottom screen lists your patches.
 
-首次打开程序时，先选择界面语言。上下移动时可以预览对应语言，按 A 确认。
+1. Use Up and Down to move through the list. Press A to enable or disable a patch.
+2. Press START to launch the game.
+3. When you use a patch for the first time, the app prepares the required files and then starts the game.
 
-出现卡带提示后，插入游戏卡带并按 A 识别。读取成功后，上屏幕显示游戏图标和名称，下屏幕列出补丁。
+The app remembers the enabled patches and their order for each game, and restores your selection the next time you open it. If no patches are enabled, pressing START launches the original game.
 
-1. 使用方向键上下移动，按 A 启用或取消补丁。
-2. 按 START 启动游戏。
-3. 首次使用该补丁时，程序会自动准备所需文件，完成后进入游戏。
+During preparation, the screen shows the current step, progress, elapsed time and estimated time remaining. While processing files, it also shows the current file number and total file count. The remaining time is estimated for the whole preparation process and adjusts to the actual processing speed.
 
-程序会记住每个游戏启用的补丁及其顺序，下次打开时恢复选择。没有启用补丁时，按 START 启动原版游戏。
+Reopen the app after adding patches. To change cartridges or recover after removing and reinserting a cartridge, press X and select **Read another Game Card**. Follow the insertion prompt and press A. The app restores the saved patch selection for that game.
 
-准备期间会显示处理步骤、进度、已用时间和预计剩余时间；处理文件时还会显示文件编号与总数。预计剩余时间按整个准备过程估算，会随实际处理速度调整。
+### Using multiple patches
 
-添加补丁后，需要重新打开程序。更换卡带或误拔后重新插入时，按 X 打开菜单，选择“重新识别卡带”，按照提示插入卡带，再按 A。程序会恢复对应游戏的补丁选择。
+Patches are applied in the order you select them. The numbers `[1]`, `[2]` and so on beside their names show this order. To change the order, deselect the patches and select them again in the order you need.
 
-### 同时使用多个补丁
+Follow the patch authors' instructions when combining patches. For example, if a modification requires a translated version of the game, select the translation patch first, followed by that modification.
 
-补丁按照选中的先后顺序应用，列表左侧的 `[1]`、`[2]` 等数字表示顺序。需要调整时，取消选择后按所需顺序重新选择。
+You can combine multiple patches. Each patch uses the preceding result as its input, including for its MD5 requirement and preprocessing. An incompatible order stops preparation and displays an error.
 
-多个补丁应按照补丁发布者的说明组合使用。例如，某个修改补丁要求以汉化版为基础，就应先选择汉化补丁，再选择这个修改补丁。
+## Buttons and touch controls
 
-可以混合选择格式 1、格式 2 和整份 ROM 的 Xdelta。每个补丁都以此前补丁的结果为输入；补丁要求的 MD5 和预处理也针对这个中间结果。顺序不符合要求时，会停止准备并显示错误。
+| Control              | Function                                                                |
+| -------------------- | ----------------------------------------------------------------------- |
+| Up / Down            | Move the selection; scroll descriptions, error details or license texts |
+| Left / Right / L / R | Change pages                                                            |
+| A                    | Enable or disable a patch in the patch list; confirm a menu choice      |
+| START                | Launch the game from the patch list                                     |
+| X / SELECT           | Open the menu from the main screen                                      |
+| Y                    | View information and a description for the highlighted patch            |
+| B                    | Go back when indicated on screen                                        |
 
-## 按键与触屏
+You can also tap list items and action labels on the bottom screen. If a patch filename is too long to fit, leave it highlighted to see the full name scroll across the screen.
 
-| 操作 | 功能 |
-| --- | --- |
-| 方向键上下 | 移动选择；阅读简介、错误详情或授权协议时滚动文字 |
-| 方向键左右／L／R | 翻页 |
-| A | 在补丁列表选择或取消；在菜单中确认选项 |
-| START | 在补丁列表启动游戏 |
-| X／SELECT | 在主界面打开菜单 |
-| Y | 查看当前补丁的信息和简介 |
-| B | 按屏幕提示返回上一页 |
+Patch information comes from the package itself. The app indicates when a patch has no metadata or description.
 
-下屏幕的列表项目和操作文字也可以直接点击。补丁文件名过长时，停留在该项目上即可查看滚动显示的完整名称。
+## Menu
 
-补丁信息来自补丁包本身；没有附带名称、作者或简介的补丁会显示相应提示。
+- **Start original**: Launch the current cartridge without applying patches.
+- **Read another Game Card**: Return to the cartridge prompt. Remove and reinsert your cartridge, then press A to read it.
+- **Environment report**: Create a report about the console and SD card to help diagnose problems.
+- **Interface language**: Multiple languages are supported, including Simplified Chinese, Traditional Chinese, Japanese, English and Korean. Press A to save your choice, or B to restore the previous language.
+- **About**: View the app version, author and open source projects used. Press A to read the licenses.
 
-## 菜单
+## Cache and save data
 
-- **启动原版**：直接启动当前卡带。
-- **重新识别卡带**：返回卡带提示页面，拔出卡带后重新插入，再按 A 识别。
-- **环境报告**：生成用于排查问题的主机与 SD 卡环境报告。
-- **界面语言**：支持简体中文、繁体中文、日语、英语和韩语；按 A 保存选择，按 B 恢复原来的语言。
-- **关于**：查看软件版本、作者和使用的开源项目，按 A 可以阅读授权协议。
+After preparation, the cache is stored in `nitro-patcher/cache/` on the SD card. It is reused when you use the same cartridge revision and patches with the same contents and order. Changing patch contents or the combination of patches creates a corresponding cache. Cached files can be reused indefinitely.
 
-## 缓存和存档
+To free up space, turn off the console and delete `nitro-patcher/cache/`. The app will prepare the files again the next time you launch a patched game. Save data is stored on the cartridge, so deleting the patch cache does not delete your saves.
 
-首次准备完成后，缓存保存在 SD 卡的 `nitro-patcher/cache/`。以后使用相同版本的卡带、相同内容和顺序的补丁时，会直接复用缓存。补丁内容或组合改变后，程序会准备对应的缓存。缓存可长期复用。
+Your language and patch selections are stored in `nitro-patcher/config/settings.json`.
 
-需要释放空间时，可以在关闭主机后删除 `nitro-patcher/cache/`。下次启动会重新准备。游戏存档保存在卡带中，删除补丁缓存不会删除存档。
+When an app update changes the preparation rules, an older cache is rebuilt automatically when that patch combination is used. Incomplete caches left by failed or interrupted preparation cannot launch games. Select the patches and start again to retry.
 
-语言和补丁选择记录保存在 `nitro-patcher/config/settings.json`。
+## Troubleshooting
 
-程序更新后，如果缓存的准备规则已改变，会在使用该补丁组合时自动重新准备。准备失败或中断留下的未完成缓存不会用于启动游戏，重新选择补丁并启动即可重试。
+For an unsupported format version, file name, directory layout or overlay configuration, open the error details and press B to return and change your patch selection. The corresponding controls on the touch screen also work.
 
-## 遇到问题
+If no patches appear, check that the files are directly inside `nitro-patcher/patches/` and have a `.xzp`, `.zip` or `.xdelta` extension. Reopen the app after copying files.
 
-如果提示没有补丁，检查文件是否直接放在 `nitro-patcher/patches/`，以及扩展名是否为 `.xzp`、`.zip` 或 `.xdelta`。复制文件后重新打开程序。
+If you see a patch mismatch message, press A to view the details, then press B to go back and check your patches, cartridge revision and patch order.
 
-如果提示补丁不匹配，按 A 查看详情，再按 B 返回检查补丁、卡带版本及多个补丁的顺序。
-
-如果补丁的格式版本、文件名、目录或覆盖模块配置不受支持，也可以查看详情并按 B 返回，取消选择或更换补丁。下屏幕对应的操作文字支持触屏。
-
-准备或启动失败时，记录错误详情。反馈问题时，请附上软件版本、游戏名称与版本、补丁名称和应用顺序，以及 SD 卡上的 `nitro-patcher/logs/prepare.log`。也可以从菜单生成环境报告，报告保存在 `nitro-patcher/logs/environment.log`。
+If preparation or launch fails, record the error details. When reporting a problem, include the app version, game title and revision, patch names and order, and `nitro-patcher/logs/prepare.log` from the SD card. You can also generate an environment report from the menu; it is saved to `nitro-patcher/logs/environment.log`.

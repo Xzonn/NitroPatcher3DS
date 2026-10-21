@@ -30,9 +30,9 @@ launcher: patch-arm9 bootstrap
 	python3 source/build_resources.py
 	$(MAKE) -C vendor/TWiLightMenu/slot1launch
 	mkdir -p out
-	cp vendor/TWiLightMenu/slot1launch/slot1launch.nds out/NitroPatcher3DS.nds
-	cp vendor/TWiLightMenu/slot1launch/slot1launch.arm9.elf out/NitroPatcher3DS.arm9.elf
-	cp vendor/TWiLightMenu/slot1launch/slot1launch.arm7.elf out/NitroPatcher3DS.arm7.elf
+	cp vendor/TWiLightMenu/slot1launch/slot1launch.nds out/NitroPatcherDSi.nds
+	cp vendor/TWiLightMenu/slot1launch/slot1launch.arm9.elf out/NitroPatcherDSi.arm9.elf
+	cp vendor/TWiLightMenu/slot1launch/slot1launch.arm7.elf out/NitroPatcherDSi.arm7.elf
 
 launcher-slot2: launcher
 	$(MAKE) -C vendor/TWiLightMenu/slot1launch clean
@@ -42,9 +42,9 @@ launcher-slot2: launcher
 	cp assets/fonts/*.nftr build/nitrofs/fonts/
 	python3 source/build_resources.py --slot2
 	$(MAKE) -C vendor/TWiLightMenu/slot1launch SLOT2=1
-	cp vendor/TWiLightMenu/slot1launch/slot1launch.nds out/NitroPatcherNDS.nds
-	cp vendor/TWiLightMenu/slot1launch/slot1launch.arm9.elf out/NitroPatcherNDS.arm9.elf
-	cp vendor/TWiLightMenu/slot1launch/slot1launch.arm7.elf out/NitroPatcherNDS.arm7.elf
+	cp vendor/TWiLightMenu/slot1launch/slot1launch.nds out/NitroPatcherDS.nds
+	cp vendor/TWiLightMenu/slot1launch/slot1launch.arm9.elf out/NitroPatcherDS.arm9.elf
+	cp vendor/TWiLightMenu/slot1launch/slot1launch.arm7.elf out/NitroPatcherDS.arm7.elf
 
 bootstrap: build/lzss libfat
 	printf '%s\n' "$(LAUNCH_TRACE)" > build/bootstrap-mode.next
@@ -60,16 +60,16 @@ build/lzss: vendor/nds-bootstrap/lzss.c
 
 verify: all
 	mkdir -p temp
-	ndstool -i out/NitroPatcher3DS.nds
+	ndstool -i out/NitroPatcherDSi.nds
 	ndstool -i out/nds-bootstrap.nds
-	ndstool -x out/NitroPatcher3DS.nds -9 temp/packed.arm9.bin -7 temp/packed.arm7.bin
-	$(DEVKITARM)/bin/arm-none-eabi-objcopy -O binary --remove-section=.twl --remove-section=.twl_bss out/NitroPatcher3DS.arm9.elf temp/linked.arm9.bin
-	$(DEVKITARM)/bin/arm-none-eabi-objcopy -O binary --remove-section=.twl --remove-section=.twl_bss out/NitroPatcher3DS.arm7.elf temp/linked.arm7.bin
+	ndstool -x out/NitroPatcherDSi.nds -9 temp/packed.arm9.bin -7 temp/packed.arm7.bin
+	$(DEVKITARM)/bin/arm-none-eabi-objcopy -O binary --remove-section=.twl --remove-section=.twl_bss out/NitroPatcherDSi.arm9.elf temp/linked.arm9.bin
+	$(DEVKITARM)/bin/arm-none-eabi-objcopy -O binary --remove-section=.twl --remove-section=.twl_bss out/NitroPatcherDSi.arm7.elf temp/linked.arm7.bin
 	cmp temp/packed.arm9.bin temp/linked.arm9.bin
 	cmp temp/packed.arm7.bin temp/linked.arm7.bin
-	ndstool -i out/NitroPatcherNDS.nds
-	ndstool -x out/NitroPatcherNDS.nds -9 temp/packed-nds.arm9.bin -7 temp/packed-nds.arm7.bin
-	$(DEVKITARM)/bin/arm-none-eabi-objcopy -O binary --remove-section=.twl --remove-section=.twl_bss out/NitroPatcherNDS.arm9.elf temp/linked-nds.arm9.bin
-	$(DEVKITARM)/bin/arm-none-eabi-objcopy -O binary --remove-section=.twl --remove-section=.twl_bss out/NitroPatcherNDS.arm7.elf temp/linked-nds.arm7.bin
+	ndstool -i out/NitroPatcherDS.nds
+	ndstool -x out/NitroPatcherDS.nds -9 temp/packed-nds.arm9.bin -7 temp/packed-nds.arm7.bin
+	$(DEVKITARM)/bin/arm-none-eabi-objcopy -O binary --remove-section=.twl --remove-section=.twl_bss out/NitroPatcherDS.arm9.elf temp/linked-nds.arm9.bin
+	$(DEVKITARM)/bin/arm-none-eabi-objcopy -O binary --remove-section=.twl --remove-section=.twl_bss out/NitroPatcherDS.arm7.elf temp/linked-nds.arm7.bin
 	cmp temp/packed-nds.arm9.bin temp/linked-nds.arm9.bin
 	cmp temp/packed-nds.arm7.bin temp/linked-nds.arm7.bin

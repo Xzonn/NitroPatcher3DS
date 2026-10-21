@@ -66,7 +66,7 @@ void dumpEnvironment()
     np3d::makeDirectory("sd:/nitro-patcher/logs");
     FILE* report = std::fopen("sd:/nitro-patcher/logs/environment.log", "w+b");
     np3d::require(report, "Cannot open environment report");
-    environmentRecord(report, "NitroPatcher3DS environment report format=1");
+    environmentRecord(report, "NitroPatcherDS environment report format=1");
     environmentRecord(report, "compiler=%s build=%s %s libnds=%s newlib=%d.%d diagnostic=%d",
         __VERSION__, __DATE__, __TIME__, _LIBNDS_STRING, __NEWLIB__, __NEWLIB_MINOR__, NP3D_DIAGNOSTIC);
     environmentRecord(report, "abi pointer=%u long=%u size_t=%u off_t=%u fpos_t=%u stat=%u devoptab=%u",

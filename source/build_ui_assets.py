@@ -30,7 +30,7 @@ def centered(text, y):
 
 
 screen.paste(icon.convert("RGB"), (112, 52), icon.getchannel("A"))
-centered("NitroPatcher3DS", 100)
+centered("NitroPatcherDS", 100)
 centered("by Xzonn", 122)
 centered("...", 192 + 72)
 ImageDraw.Draw(screen).rectangle((32, 192 + 96, 223, 192 + 103), outline="black")

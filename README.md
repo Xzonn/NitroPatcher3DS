@@ -1,29 +1,68 @@
-# NitroPatcher3DS
+# NitroPatcherDS
 
-本项目可以在 3DS／2DS、DSi／DSi LL（XL），以及使用 SuperCard miniSD 的 NDS／NDS Lite 上，对正版 NDS 卡带使用汉化补丁。
+English | [简体中文](README.zh-hans.md)
 
-## 构建
+Apply patches to retail Nintendo DS game cartridges on a 3DS, 2DS, DSi, DS or DS Lite. Games read data from both the original cartridge and the storage card, and save directly to the cartridge.
 
-安装 Docker Desktop 并启动 Linux 容器服务，然后执行：
+## Download
 
-```powershell
-./build.ps1
-```
+Download the package for your console. Each package includes the app, a patch folder, and user guides in English and Chinese.
 
-构建需要使用 `devkitpro/devkitarm` 的 Docker 环境，并安装编译所需依赖环境。
+| Console           | Package               | Requirements                                                                |
+| ----------------- | --------------------- | --------------------------------------------------------------------------- |
+| 3DS / 2DS         | `NitroPatcher3DS.zip` | Luma3DS and FBI                                                             |
+| DSi / DSi XL (LL) | `NitroPatcherDSi.zip` | Unlaunch                                                                    |
+| DS / DS Lite      | `NitroPatcherDS.zip`  | SuperCard miniSD, SuperFW, and FlashMe configured to boot Slot-2 in DS mode |
 
-| 产物                                                           | 内容                           |
-| -------------------------------------------------------------- | ------------------------------ |
-| `out/NitroPatcher3DS.zip`                                      | 3DS／2DS 安装包，包含 CIA 和中英文说明 |
-| `out/NitroPatcherDSi.zip`                                      | DSi 安装包，通过 Unlaunch 启动，包含中英文说明 |
-| `out/NitroPatcherNDS.zip`                                      | NDS 安装包，通过 SuperFW 的 DS 模式启动，包含中英文说明 |
-| `out/NitroPatcher3DS.cia`                                      | 原卡带启动程序安装包           |
-| `out/NitroPatcher3DS.nds`                                      | 3DS／DSi 程序                   |
-| `out/NitroPatcherNDS.nds`                                      | NDS／Slot-2 程序，安装时命名为 `BOOT.NDS` |
-| `out/NitroPatcher3DS.arm9.elf`、`out/NitroPatcher3DS.arm7.elf` | 启动程序调试符号               |
-| `out/nds-bootstrap.nds`                                        | nds-bootstrap 参考引擎构建结果 |
+## Installation
 
-## 参考源码
+### 3DS / 2DS
 
-- [TWiLight Menu++](https://github.com/DS-Homebrew/TWiLightMenu)
-- [nds-bootstrap](https://github.com/DS-Homebrew/nds-bootstrap)
+1. Extract the package and copy `NitroPatcher3DS.cia` and the `nitro-patcher` folder to the root of your SD card.
+2. Install the CIA using FBI.
+3. Insert your Nintendo DS game cartridge and open NitroPatcherDS from the HOME Menu.
+
+### DSi
+
+1. Extract the package and copy the `nitro-patcher` folder to the root of the console's SD card.
+2. Insert your Nintendo DS game cartridge and turn on the console while holding A + B to open Unlaunch.
+3. Select `sdmc:/nitro-patcher/app/NitroPatcherDSi.nds` and press A to launch it.
+
+### DS / DS Lite
+
+1. Extract the package and copy `BOOT.NDS` and the `nitro-patcher` folder to the root of the SuperCard's storage card. Back up any existing `BOOT.NDS` first.
+2. Leave Slot-1 empty and use FlashMe to start the SuperCard in DS mode. Wait for SuperFW to load the app.
+3. Insert your Nintendo DS game cartridge when prompted, then press A to read it. Keep both cartridges inserted while playing.
+
+## Using patches
+
+1. Put patch files directly in `nitro-patcher/patches/` on the storage card. Leave XZP packages compressed.
+2. Choose your language on first launch. At the cartridge prompt, press A to read the cartridge.
+3. Use the directional buttons to highlight a patch, then press A to enable or disable it.
+4. Press START to launch the game. The first launch prepares a cache before starting the game. Later launches reuse that cache.
+
+| Button               | Function                                         |
+| -------------------- | ------------------------------------------------ |
+| Up / Down            | Move the selection                               |
+| Left / Right / L / R | Change pages                                     |
+| A                    | Enable or disable a patch; confirm a menu choice |
+| START                | Launch the game                                  |
+| Y                    | View patch information                           |
+| X / SELECT           | Open the menu                                    |
+| B                    | Go back                                          |
+
+The bottom screen also supports touch controls. The app remembers your language and the enabled patches and their order for each game. Patches are applied in the order you select them, shown by the numbers beside their names. With no patches selected, START launches the original game.
+
+Supported files are `.xzp`, `.zip` packages with the same internal structure as XZP, and whole-ROM `.xdelta` patches. XZP formats 1 and 2 are supported. Your cartridge must match the region and revision required by the patch.
+
+3DS and DSi support preparing complete format 2 patches for DSi-enhanced games. Games launch in DS mode. On DS / DS Lite, format 2 support currently covers ordinary Nintendo DS games. DSi-exclusive games and DSiWare are unsupported.
+
+Caches are stored in `nitro-patcher/cache/`. To free up space, turn off the console and delete this folder. The app will prepare the files again next time. Cartridge save data is unaffected.
+
+See the [user guide](docs/usage.md) for detailed controls, changing cartridges, cache handling and troubleshooting. To build from source, see the [build guide](docs/build.md).
+
+## Open source projects
+
+This project uses the patch format from [NitroPatcher](https://github.com/Xzonn/NitroPatcher) and code from [TWiLight Menu++](https://github.com/DS-Homebrew/TWiLightMenu) and [nds-bootstrap](https://github.com/DS-Homebrew/nds-bootstrap).
+
+Licensed under [GPL v3](LICENSE). Related license texts are available in the app under About → Licenses.
