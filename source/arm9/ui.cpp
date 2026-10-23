@@ -444,7 +444,7 @@ void chooseInitialLanguage() {
     while (state.first) {swiWaitForVBlank();update();}
     go(Page::Loading);render();
 }
-void setGame(np3d::SourcePtr card,const sNDSHeader& header) {
+bool setGame(np3d::SourcePtr card,const sNDSHeader& header) {
     state.hasCard=true;
     state.hasBanner=false;
     char identity[32];std::snprintf(identity,sizeof(identity),"%.4s-%04x-%02x",header.gameCode,header.headerCRC16,header.romversion);
@@ -456,12 +456,14 @@ void setGame(np3d::SourcePtr card,const sNDSHeader& header) {
     }
     if (header.bannerOffset) {
         card->read(header.bannerOffset,&state.banner,sizeof(state.banner));
-        np3d::require(swiCRC16(0xffff,state.banner.icon,0x820)==state.banner.crc,"Game Card banner checksum mismatch");
+        if (swiCRC16(0xffff,state.banner.icon,0x820)!=state.banner.crc) {
+            noCard(true);error("Game Card banner checksum mismatch");return false;
+        }
         std::memcpy(state.titles.data(),state.banner.titles,sizeof(state.banner.titles));
         if (state.banner.version>=2) card->read(header.bannerOffset+sizeof(state.banner),state.titles[6].data(),state.banner.version==2?256:512);
         state.hasBanner=true;
     }
-    returnHome();render();
+    returnHome();render();return true;
 }
 void noCard(bool missing,bool reinsert) {
     state.hasCard=false;state.hasBanner=false;state.gameKey.clear();state.selected.clear();state.info={};

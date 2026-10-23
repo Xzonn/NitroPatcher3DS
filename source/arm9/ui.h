@@ -14,7 +14,7 @@ void showStartup();
 void initialize();
 bool ready();
 void chooseInitialLanguage();
-void setGame(np3d::SourcePtr card, const sNDSHeader& header);
+bool setGame(np3d::SourcePtr card, const sNDSHeader& header);
 void noCard(bool missing = false, bool reinsert = false);
 Action update();
 const std::vector<std::string>& selectedPatches();

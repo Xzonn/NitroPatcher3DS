@@ -16,7 +16,7 @@ struct GameCard final : np3d::Source {
     alignas(4) uint32_t identity[128];
     uint32_t blockOffset = UINT32_MAX;
 
-    GameCard(uint32_t* chipId) {
+    GameCard(uint32_t* chipId, std::string& error) {
         using namespace np3d;
         auto& header = *reinterpret_cast<sNDSHeaderExt*>(headerData);
         progress("Reading Game Card header", 0, 0x1000, true);
@@ -33,9 +33,9 @@ struct GameCard final : np3d::Source {
                 reinterpret_cast<uint32_t*>(prefix), 0x1000 / sizeof(uint32_t));
         }
         progress("Initializing Game Card", 0, 0);
-        require(cardInit(&header, &id) == 0, "Cannot initialize Game Card for patch preparation");
+        if (cardInit(&header, &id) != 0) {error="Cannot initialize Game Card for patch preparation";return;}
         if (chipId) *chipId = id;
-        require(header.deviceSize <= 13, "Game Card exceeds supported ROM size");
+        if (header.deviceSize > 13) {error="Game Card exceeds supported ROM size";return;}
         size = 0x20000u << header.deviceSize;
         progress("Reading secure area", 0, 0x4000, true);
         cardRead(0x4000, reinterpret_cast<uint32_t*>(prefix + 0x4000), 0x4000);
@@ -44,8 +44,9 @@ struct GameCard final : np3d::Source {
         uint32_t code;
         std::memcpy(&code, header.gameCode, sizeof(code));
         encrypt_arm9(code, secure.data());
-        require(swiCRC16(0xffff, secure.data(), secure.size()) == header.secureCRC16,
-            "Game Card secure area checksum mismatch");
+        if (swiCRC16(0xffff, secure.data(), secure.size()) != header.secureCRC16) {
+            error="Game Card secure area checksum mismatch";return;
+        }
         if (!isDSiMode()) cardRead(0x8000,identity,sizeof(identity));
     }
 
@@ -89,7 +90,11 @@ struct GameCard final : np3d::Source {
 
 }
 
-np3d::SourcePtr openGameCard(uint32_t* chipId) { return std::make_shared<GameCard>(chipId); }
+np3d::SourcePtr openGameCard(uint32_t* chipId, std::string& error) {
+    error.clear();
+    auto card=std::make_shared<GameCard>(chipId,error);
+    return error.empty()?card:nullptr;
+}
 bool gameCardMatches(np3d::SourcePtr card) {
     alignas(4) uint32_t current[128];
     cardRead(0x8000,current,sizeof(current));

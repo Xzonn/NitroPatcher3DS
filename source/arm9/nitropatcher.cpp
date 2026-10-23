@@ -53,13 +53,14 @@ static void prepareDiagnostic() {
 }
 #endif
 
-static void resetGameCard() {
+static bool resetGameCard() {
     sysSetCardOwner(BUS_OWNER_ARM7);
     fifoSendValue32(FIFO_USER_08,1);
     fifoWaitValue32(FIFO_USER_08);
-    np3d::require(fifoGetValue32(FIFO_USER_08)==0,"Cannot reset the Game Card");
+    bool ready=fifoGetValue32(FIFO_USER_08)==0;
     for (int frame=0;frame<30;frame++) swiWaitForVBlank();
     sysSetCardOwner(BUS_OWNER_ARM9);
+    return ready;
 }
 
 #if !NP3D_SLOT2
@@ -142,6 +143,7 @@ int main(int argc,char** argv) {
             readCard=true;continue;
         }
         if (action==ui::Action::ReadCard) {
+            persistentCard.reset();persistentChipId=0;hasCard=false;
             if (isDSiMode()) {
                 if (REG_SCFG_MC & BIT(0)) {ui::noCard(!automatic,reinsert);continue;}
                 if (!cardInterfaceReady) {
@@ -151,24 +153,35 @@ int main(int argc,char** argv) {
                     fifoWaitValue32(FIFO_USER_03);
                     for (int frame=0;frame<30;frame++) swiWaitForVBlank();
                     sysSetCardOwner(BUS_OWNER_ARM9);cardInterfaceReady=true;
-                } else resetGameCard();
+                } else if (!resetGameCard()) {
+                    ui::noCard(true,reinsert);ui::error("Cannot reset the Game Card");continue;
+                }
             } else sysSetCardOwner(BUS_OWNER_ARM9);
             std::memset(header,0xff,sizeof(header));
             cardReadHeader(header);
             if (swiCRC16(0xffff,header,0x15e)!=gameHeader->headerCRC16) {
                 ui::noCard(!automatic,reinsert);continue;
             }
-            np3d::require(gameHeader->unitCode!=3,"This Game Card requires DSi mode.");
+            if (gameHeader->unitCode==3) {
+                ui::noCard(true,reinsert);ui::error("This Game Card requires DSi mode.");continue;
+            }
 #if NP3D_DIAGNOSTIC
             np3d::require(std::memcmp(gameHeader->gameCode,"IPGJ",4)==0 && gameHeader->headerCRC16==0x3c60,
                 "This diagnostic build requires IPGJ-3C60.");
 #endif
-            auto card=openGameCard(&persistentChipId);
-            if (!isDSiMode()) persistentCard=card;
-            hasCard=true;reinsert=false;ui::setGame(card,*gameHeader);continue;
+            std::string error;
+            auto card=openGameCard(&persistentChipId,error);
+            if (!card) {persistentChipId=0;ui::noCard(true,reinsert);ui::error(error);continue;}
+            hasCard=ui::setGame(card,*gameHeader);reinsert=false;
+            if (hasCard && !isDSiMode()) persistentCard=card;
+            if (!hasCard) persistentChipId=0;
+            continue;
         }
         if (!hasCard) continue;
-        if (isDSiMode()) resetGameCard();
+        if (isDSiMode() && !resetGameCard()) {
+            persistentCard.reset();persistentChipId=0;hasCard=false;reinsert=true;
+            ui::noCard(true,true);ui::error("Cannot reset the Game Card");continue;
+        }
         alignas(4) unsigned char currentHeader[0x200];
         if (persistentCard) {
             if (!gameCardMatches(persistentCard)) {
@@ -195,7 +208,12 @@ int main(int argc,char** argv) {
             std::string error;
             {
                 uint32_t chipId=persistentChipId;
-                auto card=persistentCard?persistentCard:openGameCard(&chipId);
+                auto card=persistentCard?persistentCard:openGameCard(&chipId,error);
+                if (!card) {
+                    np3d::setProgressHandler(nullptr);np3d::finishPreparationLog(false,error);
+                    persistentCard.reset();persistentChipId=0;hasCard=false;
+                    ui::noCard(true);ui::error(error);continue;
+                }
                 planPatchProgress(card,paths);
                 np3d::Prepared prepared;
                 if (paths.empty()) {
