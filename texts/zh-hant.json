@@ -622,5 +622,23 @@
     "key": "patch_error.dsi_mode_required",
     "original": "Preparing patches for this DSi-enhanced cartridge requires DSi mode. Use a 3DS or DSi.",
     "translation": "準備這張 DSi 增強卡帶的補丁需要 DSi 模式，請使用 3DS 或 DSi。"
+  },
+  {
+    "index": 105,
+    "key": "menu.ap_patch",
+    "original": "Current game AP patches: {state}",
+    "translation": "目前遊戲的反燒錄補丁：{state}"
+  },
+  {
+    "index": 106,
+    "key": "common.enabled",
+    "original": "Enabled",
+    "translation": "開啟"
+  },
+  {
+    "index": 107,
+    "key": "common.disabled",
+    "original": "Disabled",
+    "translation": "關閉"
   }
 ]

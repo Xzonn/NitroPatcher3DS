@@ -14,9 +14,9 @@ constexpr const char* Root = "sd:/nitro-patcher";
 constexpr uint16_t White = 0xffff, Black = 0x8000, Gray = 0xe739;
 constexpr int Visible = 6;
 enum class Page { Home, Language, Menu, PatchInfo, About, Licenses, LicenseText, Progress, Report, Empty, NoCard, Error, Details, Loading, Storage };
-enum class Command { Toggle, Start, Menu, Info, Back, Language, Original, Report, About, Licenses, ReadLicense, PickLanguage, Previous, Next, Up, Down, Details, ReadCard, ChangeCard, RepairStorage };
-constexpr Text MenuLabels[] = {Text::Original,Text::ChangeCard,Text::Report,Text::Language,Text::StorageTitle,Text::About};
-constexpr Command MenuCommands[] = {Command::Original,Command::ChangeCard,Command::Report,Command::Language,Command::RepairStorage,Command::About};
+enum class Command { Toggle, Start, Menu, Info, Back, Language, Original, Report, About, Licenses, ReadLicense, PickLanguage, Previous, Next, Up, Down, Details, ReadCard, ChangeCard, RepairStorage, ApPatch };
+constexpr Text MenuLabels[] = {Text::ApPatch,Text::Original,Text::ChangeCard,Text::Report,Text::Language,Text::StorageTitle,Text::About};
+constexpr Command MenuCommands[] = {Command::ApPatch,Command::Original,Command::ChangeCard,Command::Report,Command::Language,Command::RepairStorage,Command::About};
 constexpr int MenuCount = sizeof(MenuCommands)/sizeof(MenuCommands[0]);
 constexpr const char* Licenses[] = {"NitroPatcherDS.txt", "md4c.txt", "fmt.txt", "Gulim-OFL.txt", "Gulim-AUTHORS.txt", "liblzma.txt"};
 constexpr int LicenseCount = sizeof(Licenses)/sizeof(Licenses[0]);
@@ -240,11 +240,12 @@ void render() {
         if (LanguageCount>Visible) text(1,"L / R  < >",180,178);
         break;
     case Page::Menu: {
-        heading(tr(Text::Menu));
-        for (int index=0;index<MenuCount;index++) {
-            int y=32+index*20;
+        heading(tr(Text::Menu)); range(MenuCount);
+        for (int row=0;row<Visible && state.top+row<MenuCount;row++) {
+            int index=state.top+row,y=32+row*20;
             if (state.focus==index) fill(1,8,y,240,20,Gray);
-            text(1,tr(MenuLabels[index]),16,y+4); hits.push_back({8,y,240,20,MenuCommands[index],0});
+            std::string label=MenuCommands[index]==Command::ApPatch?format(Text::ApPatch,fmt::arg("state",tr(apPatchEnabled()?Text::Enabled:Text::Disabled))):tr(MenuLabels[index]);
+            text(1,label,16,y+4); hits.push_back({8,y,240,20,MenuCommands[index],0});
         }
         backKey(); break;
     }
@@ -353,7 +354,7 @@ void move(int distance,bool page=false) {
 }
 void command(Command value,int argument=0) {
     if (storage::writeBlocked() && (value==Command::Toggle || value==Command::Start ||
-        value==Command::Original || value==Command::Report || value==Command::PickLanguage)) {
+        value==Command::Original || value==Command::Report || value==Command::PickLanguage || value==Command::ApPatch)) {
         state.fatal=false;state.mismatch=false;state.detail=tr(Text::StorageIoError);go(Page::Error);return;
     }
     switch (value) {
@@ -366,6 +367,8 @@ void command(Command value,int argument=0) {
     }
     case Command::Start: pending=Action::Launch; break;
     case Command::Original: if (state.hasCard) pending=Action::Original; break;
+    case Command::ApPatch:
+        if (state.hasCard) {state.settings.apPatch[state.gameKey]=!apPatchEnabled();save();} break;
     case Command::Report: pending=Action::Report; break;
     case Command::RepairStorage: pending=Action::RepairStorage;break;
     case Command::ReadCard: pending=Action::ReadCard; break;
@@ -398,7 +401,7 @@ void command(Command value,int argument=0) {
         else if (state.page==Page::Details) go(Page::Error);
         else if (state.page==Page::LicenseText) {state.lines.clear();go(Page::Licenses);state.focus=state.licenseFocus;state.top=std::max(0,state.focus-Visible+1);}
         else if (state.page==Page::Licenses) go(Page::About);
-        else if (state.page==Page::About) {go(Page::Menu);state.focus=MenuCount-1;}
+        else if (state.page==Page::About) {go(Page::Menu);state.focus=MenuCount-1;state.top=std::max(0,state.focus-Visible+1);}
         else returnHome();
         break;
     case Command::Previous: move(-1,true);break;
@@ -494,6 +497,10 @@ Action update() {
     return pending;
 }
 const std::vector<std::string>& selectedPatches() { return state.selected; }
+bool apPatchEnabled() {
+    auto found=state.settings.apPatch.find(state.gameKey);
+    return found==state.settings.apPatch.end() || found->second;
+}
 void preparing() { go(Page::Progress);state.patchNumber=1;state.completed=state.total=0;state.elapsed=0;state.preparation={};state.stage=tr(Text::Working);state.progressDetail.clear();render(); }
 void progress(const char* stage,uint32_t completed,uint32_t total,const char* detail,uint64_t elapsed,const PreparationProgress& preparation) {
     if (std::strcmp(stage,"Patch sequence")==0) state.patchNumber=completed;
@@ -545,7 +552,7 @@ void repairStorage() {
                 break;
             }
         }
-        if (back) {state.lines.clear();go(Page::Menu);state.focus=4;render();return;}
+        if (back) {state.lines.clear();go(Page::Menu);state.focus=5;render();return;}
         if (repair && state.storageReady) {
             state.storageWorking=true;state.storageWriting=true;
             result=storage::repair(progress);show();

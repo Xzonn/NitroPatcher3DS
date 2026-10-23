@@ -16,6 +16,7 @@ PatchInfo inspectPatch(const std::string& path);
 struct Settings {
     std::string language;
     std::map<std::string, std::vector<std::string>> games;
+    std::map<std::string, bool> apPatch;
 };
 Settings loadSettings(const std::string& root);
 void saveSettings(const std::string& root, const Settings& settings);

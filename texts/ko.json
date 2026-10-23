@@ -622,5 +622,23 @@
     "key": "patch_error.dsi_mode_required",
     "original": "Preparing patches for this DSi-enhanced cartridge requires DSi mode. Use a 3DS or DSi.",
     "translation": "이 DSi 확장 게임 카드의 패치를 준비하려면 DSi 모드가 필요합니다. 3DS 또는 DSi를 사용해 주세요."
+  },
+  {
+    "index": 105,
+    "key": "menu.ap_patch",
+    "original": "Current game AP patches: {state}",
+    "translation": "현재 게임의 AP 패치: {state}"
+  },
+  {
+    "index": 106,
+    "key": "common.enabled",
+    "original": "Enabled",
+    "translation": "켜짐"
+  },
+  {
+    "index": 107,
+    "key": "common.disabled",
+    "original": "Disabled",
+    "translation": "꺼짐"
   }
 ]

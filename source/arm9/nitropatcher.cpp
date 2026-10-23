@@ -203,7 +203,7 @@ int main(int argc,char** argv) {
                     prepared.rom->finish();payload->sync();
                 } else prepared=np3d::prepare(card,paths,"sd:/nitro-patcher");
                 error=prepared.error;reused=prepared.reused;mismatch=prepared.mismatch;
-                if (error.empty()) {writePatchedLaunch(prepared,card,chipId,consoleModel);finishPatchProgress(reused);}
+                if (error.empty()) {writePatchedLaunch(prepared,card,chipId,consoleModel,ui::apPatchEnabled());finishPatchProgress(reused);}
                 else np3d::setProgressHandler(nullptr);
             }
             np3d::finishPreparationLog(reused,error);

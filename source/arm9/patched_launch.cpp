@@ -19,7 +19,7 @@ uint32_t cluster(const std::string& path, uint32_t* size = nullptr)
 
 }
 
-void writePatchedLaunch(const np3d::Prepared& prepared, np3d::SourcePtr card, uint32_t chipId, int consoleModel)
+void writePatchedLaunch(const np3d::Prepared& prepared, np3d::SourcePtr card, uint32_t chipId, int consoleModel, bool apPatch)
 {
     using namespace np3d;
     makeDirectory("sd:/nitro-patcher/config");
@@ -50,7 +50,7 @@ void writePatchedLaunch(const np3d::Prepared& prepared, np3d::SourcePtr card, ui
         descriptor.sync();
     }
     const std::string configuration =
-        "[NDS-BOOTSTRAP]\nNDS_PATH=np3d:/rom.nds\nSAVE_RELOCATION=0\nDSI_MODE=0\nCONSOLE_MODEL=" + std::to_string(consoleModel) + "\n"
+        "[NDS-BOOTSTRAP]\nNDS_PATH=np3d:/rom.nds\nSAVE_RELOCATION=0\nDSI_MODE=0\nCONSOLE_MODEL=" + std::to_string(consoleModel) + "\nAP_PATCH=" + std::to_string(apPatch) + "\n"
         "BOOST_CPU=1\nBOOST_VRAM=0\nASYNC_CARD_READ=-1\nCARD_READ_DMA=-1\nDEBUG=0\nLOGGING=0\n";
     Disk settings("sd:/nitro-patcher/config/nds-bootstrap.ini", "wb");
     settings.write(0, configuration.data(), configuration.size());

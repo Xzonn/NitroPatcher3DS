@@ -128,6 +128,11 @@ Settings loadSettings(const std::string& root) {
             settings.games[game->string].push_back(item->valuestring);
         }
     }
+    auto apPatch = cJSON_GetObjectItemCaseSensitive(json.get(), "apPatch");
+    for (auto game = apPatch ? apPatch->child : nullptr; game; game = game->next) {
+        require(cJSON_IsBool(game), "Invalid game anti-piracy setting");
+        settings.apPatch[game->string] = cJSON_IsTrue(game);
+    }
     return settings;
 }
 
@@ -141,6 +146,8 @@ void saveSettings(const std::string& root, const Settings& settings) {
         auto array = cJSON_AddArrayToObject(games, game.first.c_str());
         for (const auto& patch : game.second) cJSON_AddItemToArray(array, cJSON_CreateString(patch.c_str()));
     }
+    auto apPatch = cJSON_AddObjectToObject(json.get(), "apPatch");
+    for (const auto& game : settings.apPatch) cJSON_AddBoolToObject(apPatch, game.first.c_str(), game.second);
     char* data = cJSON_PrintUnformatted(json.get());
     require(data, "Cannot serialize settings");
     std::string path = root + "/config/settings.json";
