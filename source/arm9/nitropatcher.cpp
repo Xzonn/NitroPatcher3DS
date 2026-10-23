@@ -91,7 +91,6 @@ static void resetGameCard() {
 int main(int argc,char** argv) {
     np3d::setFatalHandler(stopWithMessage);
     fifoSendValue32(FIFO_PM,PM_REQ_SLEEP_DISABLE);
-    consoleDemoInit();
 #if NP3D_SLOT2
     (void)argc;(void)argv;
     np3d::require(!isDSiMode() && (dldiGetInternal()->features & FEATURE_SLOT_GBA),
@@ -101,7 +100,6 @@ int main(int argc,char** argv) {
 #else
     if (!isDSiMode()) stopWithMessage("Launch in DSi mode on a DSi or 3DS.");
 #endif
-    ui::showStartup();
     fifoWaitValue32(FIFO_USER_05);
     int consoleModel=fifoGetValue32(FIFO_USER_05);
     fifoWaitValue32(FIFO_USER_06);
@@ -112,6 +110,13 @@ int main(int argc,char** argv) {
     (void)arm7Scfg;
 #endif
     if (isDSiMode() && !fatInitDefault()) stopWithMessage("Unable to access the SD card.");
+#if !NP3D_SLOT2
+    np3d::require(argc>0 && argv && argv[0],"Cannot determine the app path.");
+    std::string filename=argv[0];
+    if (filename.compare(0,5,"fat:/")==0) filename="sd:"+filename.substr(4);
+    np3d::require(bootFSInit(filename.c_str()),"Cannot open app resources.");
+#endif
+    ui::showStartup();
     np3d::makeDirectory("sd:/nitro-patcher");
     ui::initialize();
     ui::chooseInitialLanguage();

@@ -31,7 +31,7 @@ try {
             throw "CIA tool setup failed with exit code $LASTEXITCODE."
         }
     }
-    & $ciaTool --srl=out/NitroPatcherDSi.nds -o out/NitroPatcher3DS.cia --micro=1
+    & $ciaTool --srl=build/forwarder/forwarder.nds -o out/NitroPatcher3DS.cia --micro=1
     if ($LASTEXITCODE -ne 0) {
         throw "CIA packaging failed with exit code $LASTEXITCODE."
     }
@@ -49,12 +49,17 @@ try {
             [void]$package.CreateEntry("nitro-patcher/")
             [void]$package.CreateEntry("nitro-patcher/patches/")
             [void]$package.CreateEntry("nitro-patcher/patches/Place patches here")
-            if ($target.Entry.StartsWith("nitro-patcher/app/")) {
+            if ($target.Entry.StartsWith("nitro-patcher/app/") -or $target.Package -eq "NitroPatcher3DS.zip") {
                 [void]$package.CreateEntry("nitro-patcher/app/")
             }
             [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
                 $package, "$projectRoot/out/$($target.Source)", $target.Entry
             )
+            if ($target.Package -eq "NitroPatcher3DS.zip") {
+                [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+                    $package, "$projectRoot/out/NitroPatcherDSi.nds", "nitro-patcher/app/NitroPatcher3DS.nds"
+                )
+            }
             [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
                 $package, "$projectRoot/docs/usage.zh-hans.md", "使用说明.md"
             )

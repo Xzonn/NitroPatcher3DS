@@ -56,13 +56,8 @@ void useLanguage(int index) {
     for (const auto& item : fonts) if (languageCodes[index]==item.language) path=item.resource;
     if (fontPath!=path) {
         font.reset();
-#if NP3D_SLOT2
         std::string embedded=std::string("boot:/")+path;
         font=std::make_unique<FontGraphic>(std::fopen(embedded.c_str(),"rb"));
-#else
-        auto data=np3d::readResource(path);
-        font=std::make_unique<FontGraphic>(data);
-#endif
         fontPath=path;
     }
     setLanguage(index);

@@ -34,3 +34,6 @@
 [submodule "vendor/BlzHelper"]
 	path = vendor/BlzHelper
 	url = https://github.com/Xzonn/BlzHelper.git
+[submodule "vendor/devkitarm-crtls"]
+	path = vendor/devkitarm-crtls
+	url = https://github.com/Xzonn/devkitarm-crtls.git

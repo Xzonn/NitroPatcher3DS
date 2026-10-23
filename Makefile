@@ -1,4 +1,4 @@
-.PHONY: all launcher launcher-slot2 bootstrap verify patch-arm9 host libfat
+.PHONY: all launcher launcher-slot2 forwarder bootstrap verify patch-arm9 host libfat
 
 export DIAGNOSTIC ?= 0
 export LAUNCH_TRACE ?= 0
@@ -7,7 +7,7 @@ export SLOT2 ?= 0
 export NP3D_VERSION := $(shell git describe --always --dirty)
 export NP3D_LIBFAT := $(CURDIR)/vendor/libfat/nds/lib/libfat.a
 
-all: launcher launcher-slot2
+all: launcher launcher-slot2 forwarder
 
 patch-arm9:
 	$(MAKE) -C source/patch MODE=arm9
@@ -18,15 +18,20 @@ host:
 libfat:
 	$(MAKE) -C vendor/libfat nds-release
 
-launcher: patch-arm9 bootstrap
+build/ds_arm9_crt0.o: vendor/devkitarm-crtls/ds_arm9_crt0.s
+	mkdir -p build
+	$(DEVKITARM)/bin/arm-none-eabi-gcc -g -mthumb-interwork -march=armv5te -c $< -o $@
+
+launcher: patch-arm9 bootstrap build/ds_arm9_crt0.o
 	mkdir -p build
 	printf '%s %s\n' "$(DIAGNOSTIC)" "$(LAUNCH_TRACE)" > build/launcher-mode.next
 	if ! cmp -s build/launcher-mode.next build/launcher-mode; then $(MAKE) -C vendor/TWiLightMenu/slot1launch clean; fi
 	mv build/launcher-mode.next build/launcher-mode
 	$(MAKE) -C vendor/TWiLightMenu/universal/bootloader_app LOADBIN=$(CURDIR)/build/np3d_load.bin
-	mkdir -p vendor/TWiLightMenu/slot1launch/data
+	mkdir -p vendor/TWiLightMenu/slot1launch/data build/nitrofs/fonts
 	cp build/np3d_load.bin vendor/TWiLightMenu/slot1launch/data/np3d_load.bin
 	rm -f vendor/TWiLightMenu/slot1launch/data/np3d_bootstrap.twl.bin
+	cp assets/fonts/*.nftr build/nitrofs/fonts/
 	python3 source/build_resources.py
 	$(MAKE) -C vendor/TWiLightMenu/slot1launch
 	mkdir -p out
@@ -40,11 +45,14 @@ launcher-slot2: launcher
 	mkdir -p vendor/TWiLightMenu/slot1launch/data build/nitrofs/fonts
 	cp build/np3d_load.bin vendor/TWiLightMenu/slot1launch/data/np3d_load.bin
 	cp assets/fonts/*.nftr build/nitrofs/fonts/
-	python3 source/build_resources.py --slot2
+	python3 source/build_resources.py
 	$(MAKE) -C vendor/TWiLightMenu/slot1launch SLOT2=1
 	cp vendor/TWiLightMenu/slot1launch/slot1launch.nds out/NitroPatcherDS.nds
 	cp vendor/TWiLightMenu/slot1launch/slot1launch.arm9.elf out/NitroPatcherDS.arm9.elf
 	cp vendor/TWiLightMenu/slot1launch/slot1launch.arm7.elf out/NitroPatcherDS.arm7.elf
+
+forwarder: launcher-slot2
+	$(MAKE) -C source/forwarder
 
 bootstrap: build/lzss libfat
 	printf '%s\n' "$(LAUNCH_TRACE)" > build/bootstrap-mode.next

@@ -1,0 +1,2 @@
+*startfile:
+../../../../../build/ds_arm9_crt0.o crti%O%s crtbegin%O%s

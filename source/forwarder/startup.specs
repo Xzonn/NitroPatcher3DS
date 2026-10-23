@@ -1,0 +1,7 @@
+%rename link old_link
+
+*link:
+%(old_link) -T ../../vendor/TWiLightMenu/universal/arm9/ds_arm9_twlm.mem%s -T ds_arm9.ld%s --gc-sections
+
+*startfile:
+../../build/ds_arm9_crt0.o crti%O%s crtbegin%O%s
