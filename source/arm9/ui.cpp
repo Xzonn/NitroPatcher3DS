@@ -38,6 +38,7 @@ struct State {
     std::vector<std::string> patches, selected;
     std::vector<std::u16string> lines;
     tNDSBanner banner = {};
+    std::array<std::array<uint16_t,128>,8> titles = {};
     bool hasBanner = false;
 };
 State state;
@@ -185,9 +186,14 @@ void upper() {
             unsigned int index=(state.banner.icon[pixel/2]>>((pixel%2)*4))&15;
             if (index) pixels[(y+42)*256+x+8]=state.banner.palette[index]|BIT(15);
         }
-        int language=languageCodes[currentLanguage()]=="en"?1:0;
+        static const char* const titleLanguages[]={"ja","en","fr","de","it","es","zh","ko"};
+        const auto& code=languageCodes[currentLanguage()];
+        int count=state.banner.version>=3?8:(state.banner.version==2?7:6);
+        int language=0;
+        for (int index=0;index<count;index++)
+            if (code==titleLanguages[index] || (index==6 && code.compare(0,3,"zh-")==0)) language=index;
         std::u16string title;
-        for (int index=0;index<128 && state.banner.titles[language][index];index++) title+=state.banner.titles[language][index];
+        for (int index=0;index<128 && state.titles[language][index];index++) title+=state.titles[language][index];
         auto lines=wrap(title,200);
         int y=42;
         for (size_t index=0;index<lines.size() && y<148;index++) {
@@ -451,6 +457,8 @@ void setGame(np3d::SourcePtr card,const sNDSHeader& header) {
     if (header.bannerOffset) {
         card->read(header.bannerOffset,&state.banner,sizeof(state.banner));
         np3d::require(swiCRC16(0xffff,state.banner.icon,0x820)==state.banner.crc,"Game Card banner checksum mismatch");
+        std::memcpy(state.titles.data(),state.banner.titles,sizeof(state.banner.titles));
+        if (state.banner.version>=2) card->read(header.bannerOffset+sizeof(state.banner),state.titles[6].data(),state.banner.version==2?256:512);
         state.hasBanner=true;
     }
     returnHome();render();

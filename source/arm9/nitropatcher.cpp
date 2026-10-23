@@ -218,6 +218,8 @@ int main(int argc,char** argv) {
 #if NP3D_DIAGNOSTIC
         prepareDiagnostic();
 #endif
+        auto settings=gameLaunchSettings(isDSiMode(),gameHeader->unitCode,gameHeader->gameCode,ui::languageCodes[ui::currentLanguage()]);
+        TWLMODE=settings.dsiMode;TWLCLK=settings.boostCpu;
         if (isDSiMode() && !TWLCLK && (gameHeader->unitCode==0 || !TWLMODE)) {
             fifoSendValue32(FIFO_USER_04,1);REG_SCFG_CLK=0x80;swiWaitForVBlank();
         }

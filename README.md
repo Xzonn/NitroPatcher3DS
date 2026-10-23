@@ -53,9 +53,9 @@ Download the package for your console. Each package includes the app, a patch fo
 
 The bottom screen also supports touch controls. The app remembers your language and the enabled patches and their order for each game. Patches are applied in the order you select them, shown by the numbers beside their names. With no patches selected, START launches the original game.
 
-Supported files are `.xzp`, `.zip` packages with the same internal structure as XZP, and whole-ROM `.xdelta` patches. XZP formats 1 and 2 are supported. Your cartridge must match the region and revision required by the patch.
+Supported files are `.xzp`, `.zip` packages with the same internal structure as XZP, and whole-ROM `.xdelta` patches. Your cartridge must match the region and revision required by the patch.
 
-3DS and DSi support preparing complete format 2 patches for DSi-enhanced games. Games launch in DS mode. On DS / DS Lite, format 2 support currently covers ordinary Nintendo DS games. DSi-exclusive games and DSiWare are unsupported.
+3DS and DSi support selecting DS or DSi mode according to the game. DSi-exclusive games and DSiWare are unsupported.
 
 Caches are stored in `nitro-patcher/cache/`. To free up space, turn off the console and delete this folder. The app will prepare the files again next time. Cartridge save data is unaffected.
 
